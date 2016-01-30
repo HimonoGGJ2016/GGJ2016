@@ -244,9 +244,9 @@ public class PhotonView : Photon.MonoBehaviour
     protected internal bool removedFromLocalViewList;
 
     internal MonoBehaviour[] RpcMonoBehaviours;
-    private MethodInfo OnSerializeMethodInfo;
+    //private MethodInfo OnSerializeMethodInfo;
 
-    private bool failedToFindOnSerialize;
+    //private bool failedToFindOnSerialize;
 
     /// <summary>Called by Unity on start of the application and does a setup the PhotonView.</summary>
     protected internal void Awake()

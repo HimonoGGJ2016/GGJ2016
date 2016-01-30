@@ -29,7 +29,7 @@ namespace HimonoLib
 
         protected void Awake()
         {
-
+            AwakeImpl();
         }
         protected virtual void AwakeImpl()
         {
@@ -38,6 +38,7 @@ namespace HimonoLib
 
         protected void Start()
         {
+            StartImpl();
         }
         protected virtual void StartImpl()
         {
@@ -46,6 +47,7 @@ namespace HimonoLib
 
         protected void Update()
         {
+            UpdateImpl();
         }
         protected virtual void UpdateImpl()
         {

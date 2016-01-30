@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public class PhotonTransformViewPositionControl 
 {
     PhotonTransformViewPositionModel m_Model;
-    float m_CurrentSpeed;
+    //float m_CurrentSpeed;
     double m_LastSerializeTime;
     Vector3 m_SynchronizedSpeed = Vector3.zero;
     float m_SynchronizedTurnSpeed = 0;

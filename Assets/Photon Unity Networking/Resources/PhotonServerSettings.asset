@@ -36,4 +36,9 @@ MonoBehaviour:
   - PunRespawn
   - RequestForPickupTimes
   - TaggedPlayer
+  - StartGame_RPC
+  - ChangeScene_RPC
+  - SendArmPowerRPC
+  - SetID_RPC
+  - CollectArmRPC
   DisableAutoOpenWizard: 1

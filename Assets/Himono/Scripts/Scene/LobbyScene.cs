@@ -4,6 +4,7 @@
 //
 //------------------------------------------------------------------------
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace HimonoLib
 {
@@ -12,10 +13,28 @@ namespace HimonoLib
     
     #region Variable
 
+        [SerializeField]
+        private Button  m_startButton   = null;
+
+
     #endregion // Variable
 
     
     #region Property
+
+        public bool ShowStartButton
+        {
+            set
+            {
+                if( m_startButton == null )
+                {
+                    return;
+
+                }
+                m_startButton.gameObject.SetActive( value );
+            }
+
+        }
 
     #endregion // Property
 
@@ -27,10 +46,21 @@ namespace HimonoLib
             NetworkManager.Instance.Join( OnJoined );
         }
 
-    #endregion // Public
+        public void StartGame()
+        {
+            NetworkManager.Instance.ChangeSceneAllPlayer( EScene.Game );
+        }
 
-    
-    #region UnityEvent
+
+        #endregion // Public
+
+
+        #region UnityEvent
+
+        protected override void AwakeImpl()
+        {
+            ShowStartButton = false;
+        }
 
     #endregion // UnityEvent
 
@@ -39,7 +69,10 @@ namespace HimonoLib
 
         private void OnJoined()
         {
-
+            if( NetworkManager.Instance.Connected && NetworkManager.Instance.IsMasterClient )
+            {
+                ShowStartButton = true;
+            }
         }
 
     #endregion // Callback

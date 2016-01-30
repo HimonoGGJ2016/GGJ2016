@@ -18,13 +18,29 @@ namespace HimonoLib
 
     #endregion // Variable
 
-    
+
+    #region Event
+
+        public event System.Action< AsuraArm[] >    OnCollectArm    = (armList) => {};
+        public event System.Action< int, float >    OnChangeArm     = (armID, power) => {};
+
+    #endregion // Event
+
+
     #region Property
 
         public static NetworkManager Instance
         {
             get;
             private set;
+        }
+
+        public bool IsMasterClient
+        {
+            get
+            {
+                return PhotonNetwork.isMasterClient;
+            }
         }
 
         public bool Connected
@@ -61,6 +77,57 @@ namespace HimonoLib
             StartCoroutine( JoinCoroutine( i_callback ) );
         }
 
+        public void ChangeSceneAllPlayer( EScene i_scene )
+        {
+            if( IsMasterClient && Connected )
+            {
+                photonView.RPC( "ChangeScene_RPC", PhotonTargets.All, (int)i_scene );
+                return;
+            }
+            ChangeScene( i_scene );
+
+        }
+        public void ChangeScene( EScene i_scene )
+        {
+            SceneController.Instance.ChangeScene( i_scene );
+        }
+        [PunRPC]
+        private void ChangeScene_RPC( int i_scene )
+        {
+            ChangeScene( (EScene)i_scene );
+        }
+
+
+        public void CollectArm()
+        {
+            if( Connected )
+            {
+                photonView.RPC( "CollectArmRPC", PhotonTargets.All );
+            }
+            
+        }
+        [PunRPC]
+        private void CollectArmRPC()
+        {
+            OnCollectArm( GameObject.FindObjectsOfType< AsuraArm >() );
+        }
+
+        public void SendArmPower( int i_id, float i_power )
+        {
+            if( Connected )
+            {
+                photonView.RPC( "SendArmPowerRPC", PhotonTargets.All, i_id, i_power );
+            }
+            
+        }
+        [PunRPC]
+        private void SendArmPowerRPC( int i_id, float i_power )
+        {
+            OnChangeArm( i_id, i_power );
+        }
+
+
+
     #endregion // Public
 
 
@@ -86,6 +153,11 @@ namespace HimonoLib
         void Update()
         {
             ApplyUI();
+
+
+//             Debug.LogFormat( "Horizontal={0}", Input.GetAxis( "HorizontalDPad" ) );
+//             Debug.LogFormat( "Vertical={0}", Input.GetAxis( "VerticalDPad" ) );
+
         }
 
     #endregion // UnityEvent
@@ -146,6 +218,8 @@ namespace HimonoLib
             {
                 yield return null;
             }
+
+            yield return new WaitForSeconds( 2.0f );
 
             if( i_callback != null )
             {
