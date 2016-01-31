@@ -4,6 +4,7 @@
 //
 //------------------------------------------------------------------------
 using UnityEngine;
+using UnityEngine.UI;
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections;
@@ -15,6 +16,13 @@ namespace HimonoLib
     
     #region Variable
 
+        [SerializeField]
+        private GameObject  m_timePanel = null;
+        [SerializeField]
+        private Text    m_timeText  = null;
+
+        private float   m_time  = 0.0f;
+
         private List< AsuraArm >    m_armList   = new List<AsuraArm>();
 
         private AsuraArm    m_selectR   = null;
@@ -25,7 +33,34 @@ namespace HimonoLib
     #endregion // Variable
 
 
-    #region Property
+        #region Property
+
+        private bool ActivateTime
+        {
+            set
+            {
+                if( m_timePanel == null )
+                {
+                    return;
+                }
+
+                m_timePanel.SetActive( value );
+            }
+        }
+
+        private float TimeText
+        {
+            set
+            {
+                if( m_timeText == null )
+                {
+                    return;
+                }
+
+                value   = Mathf.Max( 0.0f, value );
+                m_timeText.text = value.ToString( "F2" );
+            }
+        }
 
         private string HandPointLeftTag
         {
@@ -62,7 +97,10 @@ namespace HimonoLib
             NetworkManager.Instance.OnInitPose += OnInitPose;
             NetworkManager.Instance.OnStartGame += OnStartGame;
 
-            
+            m_time      = GameSettingManager.Table.m_gameTime;
+            ActivateTime = false;
+
+
 
             InstantiateHands( HandPointLeftTag,     0,      GameSettingManager.Instance.GetArm( EArmType.LeftA ) );
             InstantiateHands( HandPointRightTag,    1000,   GameSettingManager.Instance.GetArm( EArmType.RightA ) );
@@ -84,13 +122,13 @@ namespace HimonoLib
 
         protected override void UpdateImpl()
         {
-            
+            TimeText    = m_time;
 
 
-//             NetworkManager.Instance.SendArmPower( 1, hPowerL );
-//             NetworkManager.Instance.SendArmPower( 2, vPowerL );
-//             NetworkManager.Instance.SendArmPower( 4, hPowerR );
-//             NetworkManager.Instance.SendArmPower( 5, vPowerR );
+            //             NetworkManager.Instance.SendArmPower( 1, hPowerL );
+            //             NetworkManager.Instance.SendArmPower( 2, vPowerL );
+            //             NetworkManager.Instance.SendArmPower( 4, hPowerR );
+            //             NetworkManager.Instance.SendArmPower( 5, vPowerR );
         }
 
     #endregion // UnityEvent
@@ -260,20 +298,22 @@ namespace HimonoLib
 
         private IEnumerator GameState()
         {
-            while( true )
+            ActivateTime    = true;
+            yield return null;
+
+            while( m_time > 0.0f )
             {
                 UpdateControl();
-
+                m_time  -= Time.deltaTime;
                 yield return null;
+            }
+
+            if( NetworkManager.Instance.IsMasterClient )
+            {
+                NetworkManager.Instance.ChangeSceneAllPlayer( EScene.Result );
             }
             
         }
-
-
-
-
-
-
 
         #endregion // State
 

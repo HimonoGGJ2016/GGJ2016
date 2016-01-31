@@ -86,6 +86,16 @@ namespace HimonoLib
 
         #region Public
 
+        public void Connect()
+        {
+            PhotonNetwork.ConnectUsingSettings( "0.1" );
+        }
+
+        public void Diconnect()
+        {
+            PhotonNetwork.Disconnect();
+        }
+
         public void Join( System.Action i_callback )
         {
             StartCoroutine( JoinCoroutine( i_callback ) );
@@ -201,7 +211,7 @@ namespace HimonoLib
 
         void Start()
         {
-            PhotonNetwork.ConnectUsingSettings( "0.1" );
+            Connect();
         }
 
         void Update()

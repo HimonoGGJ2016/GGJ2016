@@ -27,3 +27,4 @@ MonoBehaviour:
   m_armList:
   - {fileID: 11482978, guid: 073c6ded506055b469f3fb4fc1a434af, type: 2}
   - {fileID: 11495970, guid: 80164fa18e6100540817e0f0c369b6c2, type: 2}
+  m_gameTime: 5
