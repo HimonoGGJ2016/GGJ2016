@@ -15,12 +15,26 @@ namespace HimonoLib
 
         [SerializeField]
         private Button  m_startButton   = null;
+        [SerializeField]
+        private Button  m_loginButton   = null;
+
+        #endregion // Variable
 
 
-    #endregion // Variable
+        #region Property
 
-    
-    #region Property
+        public bool ShowLoginButton
+        {
+            set
+            {
+                if( m_loginButton == null )
+                {
+                    return;
+
+                }
+                m_loginButton.gameObject.SetActive( value );
+            }
+        }
 
         public bool ShowStartButton
         {
@@ -33,7 +47,6 @@ namespace HimonoLib
                 }
                 m_startButton.gameObject.SetActive( value );
             }
-
         }
 
     #endregion // Property
@@ -44,6 +57,7 @@ namespace HimonoLib
         public void Join()
         {
             NetworkManager.Instance.Join( OnJoined );
+            ShowLoginButton = false;
         }
 
         public void StartGame()
