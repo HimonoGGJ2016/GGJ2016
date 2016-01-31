@@ -82,12 +82,16 @@ namespace HimonoLib
 
         private void PlayBGM( string i_scene )
         {
-//             var sceneInfo   = GameSettingManager.GetSceneInfo( i_scene );
-//             if( sceneInfo != null && sceneInfo.BGM != null )
-//             {
-//                 m_bgmAudio.clip = sceneInfo.BGM;
-//                 m_bgmAudio.Play();
-//             }
+            var audio   = GameSettingManager.Instance.GetBGM( i_scene );
+            if( audio != null )
+            {
+                m_bgmAudio.clip = audio;
+                m_bgmAudio.Play();
+            }
+            else
+            {
+                StopBGM();
+            }
         }
 
         private void StopBGM()

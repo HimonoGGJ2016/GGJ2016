@@ -13,9 +13,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_fadeResource: {fileID: 107706, guid: 9d6f25bd985effe4c9ff7df900ce2246, type: 2}
   m_sceneList:
-  - m_name: 
+  - m_name: Initialize
+    m_bgm: {fileID: 0}
   - m_name: Lobby
+    m_bgm: {fileID: 8300000, guid: 178b0fc828c43f7468e2dd2c01caf482, type: 3}
   - m_name: Game
+    m_bgm: {fileID: 8300000, guid: ea75b2acb88ee634c8f2bdeee276fb65, type: 3}
+  - m_name: Result
+    m_bgm: {fileID: 0}
   m_handResource: Game/Asura/Hand
   m_handPointLTag: HandPointL
   m_handPointRTag: HandPointR

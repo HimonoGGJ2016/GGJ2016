@@ -6,6 +6,7 @@
 using UnityEngine;
 using System.Linq;
 using System.Collections.Generic;
+using System.Collections;
 
 namespace HimonoLib
 {
@@ -57,20 +58,33 @@ namespace HimonoLib
         protected override void AwakeImpl()
         {
             NetworkManager.Instance.OnChangeArm  += OnChangePower;
+            NetworkManager.Instance.OnSetPose   += OnSetPose;
+            NetworkManager.Instance.OnInitPose += OnInitPose;
+            NetworkManager.Instance.OnStartGame += OnStartGame;
+
+            
 
             InstantiateHands( HandPointLeftTag,     0,      GameSettingManager.Instance.GetArm( EArmType.LeftA ) );
             InstantiateHands( HandPointRightTag,    1000,   GameSettingManager.Instance.GetArm( EArmType.RightA ) );
+
+            NetworkManager.Instance.ActivateUI  = false;
         }
 
         protected override void StartImpl()
         {
             m_selectL   = m_armList.Find( value => value.ID == 0 );
             m_selectR   = m_armList.Find( value => value.ID == 1000 );
+
+            if( NetworkManager.Instance.IsMasterClient )
+            {
+                StartCoroutine( PoseState() );
+            }
+
         }
 
         protected override void UpdateImpl()
         {
-            UpdateControl();
+            
 
 
 //             NetworkManager.Instance.SendArmPower( 1, hPowerL );
@@ -102,11 +116,6 @@ namespace HimonoLib
 
         private void UpdateControl()
         {
-            Debug.Log( Input.GetButtonDown( "SelectR" ) );
-
-            Debug.Log( Input.GetButtonDown( "SelectR2" ) );
-            Debug.Log( Input.GetButtonDown( "SelectL" ) );
-            Debug.Log( Input.GetButtonDown( "SelectL2" ) );
             if( m_selectL != null )
             {
                 int vPower  = Mathf.RoundToInt( Input.GetAxis( "Vertical" ) * 10.0f );
@@ -196,12 +205,88 @@ namespace HimonoLib
             }
         }
 
-    #endregion // Private
+        private void OnSetPose( object i_value )
+        {
+            var list    = ( float[] )i_value;
+            for( int i = 0, j = 0; j < m_armList.Count; i+=3, ++j )
+            {
+                //var value = list[i];
+                m_armList[ j ].SetPose( list[ i ], list[ i+1 ], list[ i+2 ] );
+            }
+        }
+
+        private void OnInitPose()
+        {
+            foreach( var arm in m_armList )
+            {
+                arm.InitRot();
+            }
+        }
+
+        private void OnStartGame()
+        {
+            StartCoroutine( GameState() );
+        }
+
+        #endregion // Private
+
+
+        #region State
+
+        private IEnumerator PoseState()
+        {
+            yield return new WaitForSeconds( 1.0f );
+
+
+            {
+                var randList = new List< float >();
+                for( int i = 0; i < m_armList.Count * 30.0f; ++i )
+                {
+                    randList.Add( Random.Range( -45.0f, 45.0f ) );
+                }
+
+                NetworkManager.Instance.SendPose( randList.ToArray() );
+            }
+            
+
+            yield return new WaitForSeconds( 5.0f );
+
+            NetworkManager.Instance.InitPose();
+
+            yield return new WaitForSeconds( 1.0f );
+
+            NetworkManager.Instance.StartGame();
+        }
+
+        private IEnumerator GameState()
+        {
+            while( true )
+            {
+                UpdateControl();
+
+                yield return null;
+            }
+            
+        }
+
+
+
+
+
+
+
+        #endregion // State
+
+
+
+
 
 
 
 
     } // class GameScene
-    
+
+
+
 } // namespace HimonoLib
 

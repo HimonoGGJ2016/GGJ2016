@@ -23,6 +23,9 @@ namespace HimonoLib
 
         public event System.Action< AsuraArm[] >    OnCollectArm        = (armList) => {};
         public event System.Action< int, int, int > OnChangeArm     = (armID, handID, power) => {};
+        public event System.Action< object >        OnSetPose       = (pose) => {};
+        public event System.Action                  OnInitPose      = () => {};
+        public event System.Action                  OnStartGame     = () => {};
 
     #endregion // Event
 
@@ -67,10 +70,21 @@ namespace HimonoLib
             }
         }
 
-    #endregion // Property
+        public bool ActivateUI
+        {
+            set
+            {
+                if( m_networkUI != null )
+                {
+                    m_networkUI.gameObject.SetActive( value );
+                }
+            }
+        }
+
+        #endregion // Property
 
 
-    #region Public
+        #region Public
 
         public void Join( System.Action i_callback )
         {
@@ -126,11 +140,52 @@ namespace HimonoLib
             OnChangeArm( i_armID, i_handID, i_power );
         }
 
+        public void SendPose( object i_angleList )
+        {
+            if( Connected )
+            {
+                photonView.RPC( "SendPoseRPC", PhotonTargets.All, i_angleList );
+            }
+        }
+        [PunRPC]
+        private void SendPoseRPC( object i_angleList )
+        {
 
-    #endregion // Public
+            OnSetPose( i_angleList );
+        }
+
+        public void InitPose( )
+        {
+            if( Connected )
+            {
+                photonView.RPC( "InitPoseRPC", PhotonTargets.All );
+            }
+        }
+        [PunRPC]
+        private void InitPoseRPC()
+        {
+
+            OnInitPose(  );
+        }
+
+        public void StartGame()
+        {
+            if( Connected )
+            {
+                photonView.RPC( "StartGameRPC", PhotonTargets.All );
+            }
+        }
+        [PunRPC]
+        private void StartGameRPC()
+        {
+            OnStartGame();
+        }
 
 
-    #region UnityEvent
+        #endregion // Public
+
+
+        #region UnityEvent
 
         void Awake()
         {

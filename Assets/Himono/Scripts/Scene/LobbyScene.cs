@@ -60,6 +60,8 @@ namespace HimonoLib
         protected override void AwakeImpl()
         {
             ShowStartButton = false;
+
+            NetworkManager.Instance.ActivateUI = true;
         }
 
     #endregion // UnityEvent

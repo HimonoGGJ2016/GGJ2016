@@ -38,10 +38,36 @@ namespace HimonoLib
             }
         }
 
+        public bool Activate
+        {
+            get
+            {
+                return true;
+            }
+            set
+            {
+
+            }
+        }
+
         #endregion // Property
 
 
         #region Public
+
+        public void SetPose( float i_front, float i_center, float i_back )
+        {
+            m_armFront.transform.localRotation   = Quaternion.Euler( new Vector3( 0.0f, 0.0f, i_front ) );
+            m_armCenter.transform.localRotation = Quaternion.Euler( new Vector3( 0.0f, 0.0f, i_center ) );
+            m_armBack.transform.localRotation = Quaternion.Euler( new Vector3( 0.0f, 0.0f, i_back ) );
+        }
+
+        public void InitRot()
+        {
+            m_armFront.transform.localRotation = Quaternion.Euler( new Vector3( 0.0f, 0.0f, 0.0f ) );
+            m_armCenter.transform.localRotation = Quaternion.Euler( new Vector3( 0.0f, 0.0f, 0.0f ) );
+            m_armBack.transform.localRotation = Quaternion.Euler( new Vector3( 0.0f, 0.0f, 0.0f ) );
+        }
 
         public void RotateArm( int i_handID, float i_power )
         {
@@ -63,7 +89,22 @@ namespace HimonoLib
 
             if( ts != null )
             {
-                ts.localRotation *= Quaternion.Euler( new Vector3( 0.0f, 0.0f, i_power ) );
+                var rot = ts.localRotation.eulerAngles;
+                rot    += new Vector3( 0.0f, 0.0f, i_power );
+                if( rot.z > 180.0f )
+                {
+                    rot.z   = rot.z - 360.0f;
+                }
+                if( rot.z > 45.0f )
+                {
+                    rot.z = 45.0f;
+                }
+                if( rot.z < -45.0f )
+                {
+                    rot.z = -45.0f;
+                }
+
+                ts.localRotation    = Quaternion.Euler( rot );
             }
 
         }

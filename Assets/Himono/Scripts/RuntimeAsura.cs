@@ -19,9 +19,8 @@ namespace HimonoLib
                 
             }
 
-            var fade    = fadeObj.AddComponent< FadeController >();
-
-            var sceneObj    = new GameObject( "SceneManager", typeof( SceneController ) );
+            fadeObj.AddComponent< FadeController >();
+            new GameObject( "SceneManager", typeof( SceneController ) );
         }
 
     } // class RuntimeAsura

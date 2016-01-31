@@ -9,13 +9,17 @@ namespace HimonoLib
 {
     public enum EScene
     {
+        None,
         Title,
-        Lobby,
         Game,
         Result,
-        End,
     }
 
+    public enum EArmType
+    {
+        RightA,
+        LeftA,
+    }
 
 } // namespace HimonoLib
 

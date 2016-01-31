@@ -40,4 +40,7 @@ MonoBehaviour:
   - SendArmPowerRPC
   - SetID_RPC
   - TaggedPlayer
+  - InitPoseRPC
+  - SendPoseRPC
+  - StartGameRPC
   DisableAutoOpenWizard: 1

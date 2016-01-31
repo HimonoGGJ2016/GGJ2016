@@ -4,17 +4,10 @@
 //
 //------------------------------------------------------------------------
 using UnityEngine;
+using System.Linq;
 
 namespace HimonoLib
 {
-    public enum EArmType
-    {
-        RightA,
-        LeftA,
-    }
-
-
-
 
     [CreateAssetMenu( menuName = "Asura/Create GameSettingTable", fileName = "GameSettingTable" )]
     public class GameSettingTable : ScriptableObject
@@ -31,6 +24,8 @@ namespace HimonoLib
         public string       m_handPointRTag  = "";
         [SerializeField, EnumListLabel( typeof( EArmType ) )]
         public AsuraArm[]   m_armList       = null;
+        [SerializeField]
+        public float        m_gameTime      = 300.0f;
     }
 
     public class GameSettingManager : SingletonAuto< GameSettingManager >
@@ -86,6 +81,15 @@ namespace HimonoLib
             return sceneList[ (int)i_scene ].m_name;
         }
 
+        public AudioClip GetBGM( string i_scene )
+        {
+            var sceneList = m_table.m_sceneList;
+
+            var data    = sceneList.FirstOrDefault( value => value.m_name == i_scene );
+            return data .m_bgm;
+
+        }
+
         public AsuraArm GetArm( EArmType i_type )
         {
             return m_table.m_armList[ (int)i_type ];
@@ -99,7 +103,9 @@ namespace HimonoLib
     public struct SceneData
     {
         [SerializeField]
-        public string   m_name;
+        public string       m_name;
+        [SerializeField]
+        public AudioClip    m_bgm;
     }
 
 } // namespace HimonoLib
