@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------
 using UnityEngine;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace HimonoLib
 {
@@ -13,18 +14,32 @@ namespace HimonoLib
     
     #region Variable
 
-        private AsuraArm[]  m_armList   = null;
+        private List< AsuraArm >    m_armList   = new List<AsuraArm>();
+
+        private AsuraArm    m_selectR   = null;
+        private AsuraArm    m_selectL   = null;
+        private int         m_selectArmR    = 0;
+        private int         m_selectArmL    = 0;
 
     #endregion // Variable
 
-    
+
     #region Property
 
-        private string HandPointTag
+        private string HandPointLeftTag
         {
             get
             {
-                return GameSettingManager.Table.m_handPointTag;
+                return GameSettingManager.Table.m_handPointLTag;
+            }
+
+        }
+
+        private string HandPointRightTag
+        {
+            get
+            {
+                return GameSettingManager.Table.m_handPointRTag;
             }
 
         }
@@ -42,28 +57,26 @@ namespace HimonoLib
         protected override void AwakeImpl()
         {
             NetworkManager.Instance.OnChangeArm  += OnChangePower;
-            NetworkManager.Instance.OnCollectArm += OnCollectArm;
+
+            InstantiateHands( HandPointLeftTag,     0,      GameSettingManager.Instance.GetArm( EArmType.LeftA ) );
+            InstantiateHands( HandPointRightTag,    1000,   GameSettingManager.Instance.GetArm( EArmType.RightA ) );
         }
 
         protected override void StartImpl()
         {
-            if( NetworkManager.Instance.IsMasterClient )
-            {
-                InstantiateHands();
-            }
+            m_selectL   = m_armList.Find( value => value.ID == 0 );
+            m_selectR   = m_armList.Find( value => value.ID == 1000 );
         }
 
         protected override void UpdateImpl()
         {
-            float hPowerL   = Mathf.Ceil( Input.GetAxis( "Horizontal" ) * 10.0f ) / 10.0f;
-            float vPowerL   = Mathf.Ceil( Input.GetAxis( "Vertical" ) * 10.0f ) / 10.0f;
-            float hPowerR   = Mathf.Ceil( Input.GetAxis( "HorizontalDPad" ) * 10.0f ) / 10.0f;
-            float vPowerR   = Mathf.Ceil( Input.GetAxis( "VerticalDPad" ) * 10.0f ) / 10.0f;
+            UpdateControl();
 
-            NetworkManager.Instance.SendArmPower( 1, hPowerL );
-            NetworkManager.Instance.SendArmPower( 2, vPowerL );
-            NetworkManager.Instance.SendArmPower( 4, hPowerR );
-            NetworkManager.Instance.SendArmPower( 5, vPowerR );
+
+//             NetworkManager.Instance.SendArmPower( 1, hPowerL );
+//             NetworkManager.Instance.SendArmPower( 2, vPowerL );
+//             NetworkManager.Instance.SendArmPower( 4, hPowerR );
+//             NetworkManager.Instance.SendArmPower( 5, vPowerR );
         }
 
     #endregion // UnityEvent
@@ -71,32 +84,115 @@ namespace HimonoLib
 
     #region Private
 
-        private void InstantiateHands()
+        private void InstantiateHands( string i_tag, int i_firstID, AsuraArm i_res )
         {
-            var res     = GameSettingManager.Table.m_handResource;
-            var list    = GameObject.FindGameObjectsWithTag( HandPointTag );
-            for( int i = 0, size = list.Length; i < size; ++i )
             {
-                var ts  = list[i].transform;
-                var obj = PhotonNetwork.Instantiate( res, ts.position, ts.rotation, 0 );
-                var arm = obj.GetComponent< AsuraArm >();
-                arm.ID  = i;
+                var list = GameObject.FindGameObjectsWithTag( i_tag );
+                var sorted  = list.OrderBy( value => value.transform.position.y ).ToArray();
+                for( int i = 0, size = sorted.Length; i < size; ++i )
+                {
+                    var point   = sorted[ i ].transform;
+                    var obj     = GameObject.Instantiate( i_res ) as AsuraArm;
+                    obj.transform.SetParent( point, false );
+                    obj.ID      = i_firstID + i;
+                    m_armList.Add( obj );
+                }
+            }
+        }
+
+        private void UpdateControl()
+        {
+            Debug.Log( Input.GetButtonDown( "SelectR" ) );
+
+            Debug.Log( Input.GetButtonDown( "SelectR2" ) );
+            Debug.Log( Input.GetButtonDown( "SelectL" ) );
+            Debug.Log( Input.GetButtonDown( "SelectL2" ) );
+            if( m_selectL != null )
+            {
+                int vPower  = Mathf.RoundToInt( Input.GetAxis( "Vertical" ) * 10.0f );
+                if( Mathf.Abs( vPower ) < 2 )
+                {
+                    vPower = 0;
+                }
+
+                NetworkManager.Instance.SendArmPower( m_selectL.ID, m_selectArmL, vPower );
+
+
+//                 int hPowerL = Mathf.RoundToInt( Input.GetAxis( "Horizontal" ) * 10.0f );
+//                 if( hPowerL < 2 )
+//                 {
+//                     hPowerL = 0;
+//                 }
+
+                if( Input.GetButtonDown( "SelectL" )/* || Input.GetButtonDown( "" )*/ )
+                {
+                    m_selectL = NextArm( m_selectL, 0, 1 );
+                }
+
+                if( Input.GetButtonDown( "SelectL2" ) )
+                {
+                    m_selectArmL++;
+                    m_selectArmL    %= 3;
+                }
             }
 
-            NetworkManager.Instance.CollectArm();
+            if( m_selectR != null )
+            {
+                int vPower  = Mathf.RoundToInt( Input.GetAxis( "VerticalDPad" ) * 10.0f );
+                if( Mathf.Abs( vPower ) < 2 )
+                {
+                    vPower  = 0;
+                }
+
+                NetworkManager.Instance.SendArmPower( m_selectR.ID, m_selectArmR, vPower );
+
+
+//                 int hPowerL = Mathf.RoundToInt( Input.GetAxis( "HorizontalDPad" ) * 10.0f );
+//                 if( hPowerL < 2 )
+//                 {
+//                     hPowerL = 0;
+//                 }
+
+                if( Input.GetButtonDown( "SelectR" )/* || Input.GetButtonDown( "" )*/ )
+                {
+                    m_selectR = NextArm( m_selectR, 1000, 1 );
+                }
+
+                if( Input.GetButtonDown( "SelectR2" ) )
+                {
+                    m_selectArmR++;
+                    m_selectArmR %= 3;
+                }
+            }
         }
 
-        private void OnCollectArm( AsuraArm[] i_armList )
+        private AsuraArm NextArm( AsuraArm i_arm, int i_default, int i_add )
         {
-            m_armList   = i_armList;
+            if( i_arm == null )
+            {
+                return m_armList.Find( value => value.ID == i_default );
+            }
+
+            int nextID  = i_arm.ID + i_add;
+            if( nextID >= i_default + 10 )
+            {
+                nextID  = i_default;
+            }
+            else if( nextID < i_default )
+            {
+                nextID  = i_default + 10 - 1;
+            }
+
+            return m_armList.Find( value => value.ID == nextID );
         }
 
-        private void OnChangePower( int i_armID, float i_power )
+
+        private void OnChangePower( int i_armID, int i_handID, int i_power )
         {
             var arm = m_armList.FirstOrDefault( value => value.ID == i_armID );
             if( arm != null )
             {
-                arm.transform.Rotate( new Vector3( 0.0f, 0.0f, i_power * 30.0f ) * Time.deltaTime );
+                arm.RotateArm( i_handID, i_power * 30.0f * Time.deltaTime );
             }
         }
 

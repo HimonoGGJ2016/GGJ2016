@@ -21,8 +21,8 @@ namespace HimonoLib
 
     #region Event
 
-        public event System.Action< AsuraArm[] >    OnCollectArm    = (armList) => {};
-        public event System.Action< int, float >    OnChangeArm     = (armID, power) => {};
+        public event System.Action< AsuraArm[] >    OnCollectArm        = (armList) => {};
+        public event System.Action< int, int, int > OnChangeArm     = (armID, handID, power) => {};
 
     #endregion // Event
 
@@ -112,20 +112,19 @@ namespace HimonoLib
             OnCollectArm( GameObject.FindObjectsOfType< AsuraArm >() );
         }
 
-        public void SendArmPower( int i_id, float i_power )
+        public void SendArmPower( int i_armID, int i_handID, int i_power )
         {
             if( Connected )
             {
-                photonView.RPC( "SendArmPowerRPC", PhotonTargets.All, i_id, i_power );
+                photonView.RPC( "SendArmPowerRPC", PhotonTargets.All, i_armID, i_handID, i_power );
             }
             
         }
         [PunRPC]
-        private void SendArmPowerRPC( int i_id, float i_power )
+        private void SendArmPowerRPC( int i_armID, int i_handID, int i_power )
         {
-            OnChangeArm( i_id, i_power );
+            OnChangeArm( i_armID, i_handID, i_power );
         }
-
 
 
     #endregion // Public
@@ -153,8 +152,8 @@ namespace HimonoLib
         void Update()
         {
             ApplyUI();
-
-
+            // Debug.LogFormat( "Horizontal={0}", Input.GetButtonDown( "SelectR" ) );
+            
 //             Debug.LogFormat( "Horizontal={0}", Input.GetAxis( "HorizontalDPad" ) );
 //             Debug.LogFormat( "Vertical={0}", Input.GetAxis( "VerticalDPad" ) );
 

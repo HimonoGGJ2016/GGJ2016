@@ -14,7 +14,11 @@ MonoBehaviour:
   m_fadeResource: {fileID: 107706, guid: 9d6f25bd985effe4c9ff7df900ce2246, type: 2}
   m_sceneList:
   - m_name: 
-  - m_name: TestLobby
-  - m_name: TestGame
+  - m_name: Lobby
+  - m_name: Game
   m_handResource: Game/Asura/Hand
-  m_handPointTag: HandPoint
+  m_handPointLTag: HandPointL
+  m_handPointRTag: HandPointR
+  m_armList:
+  - {fileID: 11482978, guid: 073c6ded506055b469f3fb4fc1a434af, type: 2}
+  - {fileID: 11495970, guid: 80164fa18e6100540817e0f0c369b6c2, type: 2}

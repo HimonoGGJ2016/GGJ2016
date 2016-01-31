@@ -21,7 +21,9 @@ MonoBehaviour:
   JoinLobby: 0
   EnableLobbyStatistics: 0
   RpcList:
+  - ChangeScene_RPC
   - Chat
+  - CollectArmRPC
   - ColorRpc
   - DestroyRpc
   - DoJump
@@ -35,10 +37,7 @@ MonoBehaviour:
   - PunPickupSimple
   - PunRespawn
   - RequestForPickupTimes
-  - TaggedPlayer
-  - StartGame_RPC
-  - ChangeScene_RPC
   - SendArmPowerRPC
   - SetID_RPC
-  - CollectArmRPC
+  - TaggedPlayer
   DisableAutoOpenWizard: 1
