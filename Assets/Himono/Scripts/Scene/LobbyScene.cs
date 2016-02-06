@@ -76,6 +76,8 @@ namespace HimonoLib
             ShowStartButton = false;
 
             NetworkManager.Instance.ActivateUI = true;
+
+            GameInformation.Instance.Initialize();
         }
 
     #endregion // UnityEvent
@@ -85,7 +87,7 @@ namespace HimonoLib
 
         private void OnJoined()
         {
-            if( NetworkManager.Instance.Connected && NetworkManager.Instance.IsMasterClient )
+            if( NetworkManager.Instance.Connected )
             {
                 ShowStartButton = true;
             }

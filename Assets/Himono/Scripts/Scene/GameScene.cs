@@ -20,6 +20,8 @@ namespace HimonoLib
         private GameObject  m_timePanel = null;
         [SerializeField]
         private Text    m_timeText  = null;
+        [SerializeField]
+        private Animator    m_doorAnimator  = null;
 
         private float   m_time  = 0.0f;
 
@@ -96,6 +98,8 @@ namespace HimonoLib
             NetworkManager.Instance.OnSetPose   += OnSetPose;
             NetworkManager.Instance.OnInitPose += OnInitPose;
             NetworkManager.Instance.OnStartGame += OnStartGame;
+            NetworkManager.Instance.OnDoorAnime += PlayDoorAnimation;
+            NetworkManager.Instance.OnClearRate += OnSetClearRate;
 
             m_time      = GameSettingManager.Table.m_gameTime;
             ActivateTime = false;
@@ -162,7 +166,7 @@ namespace HimonoLib
                     vPower = 0;
                 }
 
-                NetworkManager.Instance.SendArmPower( m_selectL.ID, m_selectArmL, vPower );
+                NetworkManager.Instance.SendArmPower( m_selectL.ID, 0, vPower );
 
 
 //                 int hPowerL = Mathf.RoundToInt( Input.GetAxis( "Horizontal" ) * 10.0f );
@@ -191,7 +195,7 @@ namespace HimonoLib
                     vPower  = 0;
                 }
 
-                NetworkManager.Instance.SendArmPower( m_selectR.ID, m_selectArmR, vPower );
+                NetworkManager.Instance.SendArmPower( m_selectR.ID, 0, vPower );
 
 
 //                 int hPowerL = Mathf.RoundToInt( Input.GetAxis( "HorizontalDPad" ) * 10.0f );
@@ -246,10 +250,10 @@ namespace HimonoLib
         private void OnSetPose( object i_value )
         {
             var list    = ( float[] )i_value;
-            for( int i = 0, j = 0; j < m_armList.Count; i+=3, ++j )
+            for( int i = 0, j = 0; j < m_armList.Count; i+=1, ++j )
             {
                 //var value = list[i];
-                m_armList[ j ].SetPose( list[ i ], list[ i+1 ], list[ i+2 ] );
+                m_armList[ j ].SetPose( list[ i ], list[ i ], list[ i ] );
             }
         }
 
@@ -266,6 +270,19 @@ namespace HimonoLib
             StartCoroutine( GameState() );
         }
 
+        private void PlayDoorAnimation( string i_anime )
+        {
+            m_doorAnimator.Play( i_anime );
+        }
+
+        private void OnSetClearRate( int rate )
+        {
+            GameInformation.Instance.SetClearRate( rate );
+            Debug.Log( rate );
+        }
+
+
+
         #endregion // Private
 
 
@@ -278,20 +295,29 @@ namespace HimonoLib
 
             {
                 var randList = new List< float >();
-                for( int i = 0; i < m_armList.Count * 30.0f; ++i )
+                for( int i = 0; i < m_armList.Count; ++i )
                 {
                     randList.Add( Random.Range( -45.0f, 45.0f ) );
                 }
 
                 NetworkManager.Instance.SendPose( randList.ToArray() );
+                NetworkManager.Instance.PlayDoorAnime( "open" );
             }
             
 
             yield return new WaitForSeconds( 5.0f );
 
+            NetworkManager.Instance.PlayDoorAnime( "close" );
+
+            yield return new WaitForSeconds( 2.0f );
+
+            GameInformation.Instance.SetTargetPose( m_armList.ToArray() );
+
             NetworkManager.Instance.InitPose();
 
             yield return new WaitForSeconds( 1.0f );
+
+            NetworkManager.Instance.PlayDoorAnime( "open" );
 
             NetworkManager.Instance.StartGame();
         }
@@ -308,8 +334,18 @@ namespace HimonoLib
                 yield return null;
             }
 
+
+
             if( NetworkManager.Instance.IsMasterClient )
             {
+                
+                NetworkManager.Instance.PlayDoorAnime( "close" );
+
+                yield return new WaitForSeconds( 2.0f );
+
+                int rate = GameInformation.Instance.SetResultPose( m_armList.ToArray() );
+                NetworkManager.Instance.SetClearRate( rate );
+
                 NetworkManager.Instance.ChangeSceneAllPlayer( EScene.Result );
             }
             
@@ -325,6 +361,7 @@ namespace HimonoLib
 
 
     } // class GameScene
+
 
 
 

@@ -26,6 +26,8 @@ namespace HimonoLib
         public AsuraArm[]   m_armList       = null;
         [SerializeField]
         public float        m_gameTime      = 300.0f;
+        [SerializeField]
+        public ResultData[] m_resultList    = null;
     }
 
     public class GameSettingManager : SingletonAuto< GameSettingManager >
@@ -95,6 +97,11 @@ namespace HimonoLib
             return m_table.m_armList[ (int)i_type ];
         }
 
+        public Sprite GetScoreText( int i_score )
+        {
+            return m_table.m_resultList.FirstOrDefault( value => i_score <= value.m_score ).m_sprite;
+        }
+
         #endregion // Public
 
     }
@@ -106,6 +113,15 @@ namespace HimonoLib
         public string       m_name;
         [SerializeField]
         public AudioClip    m_bgm;
+    }
+
+    [System.Serializable]
+    public struct ResultData
+    {
+        [SerializeField]
+        public Sprite   m_sprite;
+        [SerializeField]
+        public int      m_score;
     }
 
 } // namespace HimonoLib

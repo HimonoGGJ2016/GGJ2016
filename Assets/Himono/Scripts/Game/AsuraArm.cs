@@ -38,6 +38,45 @@ namespace HimonoLib
             }
         }
 
+        public float FrontAngle
+        {
+            get
+            {
+                var angle   = m_armFront.transform.localRotation.eulerAngles.z;
+                if( angle > 180.0f )
+                {
+                    angle = angle - 360.0f;
+                }
+                return angle;
+            }
+        }
+
+        public float CenterAngle
+        {
+            get
+            {
+                var angle = m_armCenter.transform.localRotation.eulerAngles.z;
+                if( angle > 180.0f )
+                {
+                    angle = angle - 360.0f;
+                }
+                return angle;
+            }
+        }
+
+        public float BackAnglet
+        {
+            get
+            {
+                var angle = m_armBack.transform.localRotation.eulerAngles.z;
+                if( angle > 180.0f )
+                {
+                    angle = angle - 360.0f;
+                }
+                return angle;
+            }
+        }
+
         public bool Activate
         {
             get
@@ -57,8 +96,8 @@ namespace HimonoLib
 
         public void SetPose( float i_front, float i_center, float i_back )
         {
-            m_armFront.transform.localRotation   = Quaternion.Euler( new Vector3( 0.0f, 0.0f, i_front ) );
-            m_armCenter.transform.localRotation = Quaternion.Euler( new Vector3( 0.0f, 0.0f, i_center ) );
+//             m_armFront.transform.localRotation   = Quaternion.Euler( new Vector3( 0.0f, 0.0f, i_front ) );
+//             m_armCenter.transform.localRotation = Quaternion.Euler( new Vector3( 0.0f, 0.0f, i_center ) );
             m_armBack.transform.localRotation = Quaternion.Euler( new Vector3( 0.0f, 0.0f, i_back ) );
         }
 

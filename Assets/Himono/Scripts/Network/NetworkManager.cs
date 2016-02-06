@@ -26,6 +26,8 @@ namespace HimonoLib
         public event System.Action< object >        OnSetPose       = (pose) => {};
         public event System.Action                  OnInitPose      = () => {};
         public event System.Action                  OnStartGame     = () => {};
+        public event System.Action< string >        OnDoorAnime     = (id) =>{};
+        public event System.Action< int >        OnClearRate        = (rate) =>{};
 
     #endregion // Event
 
@@ -86,6 +88,17 @@ namespace HimonoLib
 
         #region Public
 
+        public void Reset()
+        {
+            OnCollectArm = ( armList ) => {};
+            OnChangeArm = ( armID, handID, power ) => {};
+            OnSetPose = ( pose ) => {};
+            OnInitPose = () => {};
+            OnStartGame = () => {};
+            OnDoorAnime = ( id ) => {};
+            OnClearRate = ( rate ) => {};
+    }
+
         public void Connect()
         {
             PhotonNetwork.ConnectUsingSettings( "0.1" );
@@ -94,6 +107,7 @@ namespace HimonoLib
         public void Diconnect()
         {
             PhotonNetwork.Disconnect();
+            Reset();
         }
 
         public void Join( System.Action i_callback )
@@ -103,7 +117,7 @@ namespace HimonoLib
 
         public void ChangeSceneAllPlayer( EScene i_scene )
         {
-            if( IsMasterClient && Connected )
+            if( /*IsMasterClient &&*/ Connected )
             {
                 photonView.RPC( "ChangeScene_RPC", PhotonTargets.All, (int)i_scene );
                 return;
@@ -182,13 +196,47 @@ namespace HimonoLib
         {
             if( Connected )
             {
+                
                 photonView.RPC( "StartGameRPC", PhotonTargets.All );
             }
+
+            
         }
         [PunRPC]
         private void StartGameRPC()
         {
             OnStartGame();
+
+            if( NetworkManager.Instance.IsMasterClient )
+            {
+                PhotonNetwork.room.open = false;
+            }
+        }
+
+        public void PlayDoorAnime( string i_anime)
+        {
+            if( Connected )
+            {
+                photonView.RPC( "PlayDoorAnimeRPC", PhotonTargets.All, i_anime );
+            }
+        }
+        [PunRPC]
+        private void PlayDoorAnimeRPC( string i_anime )
+        {
+            OnDoorAnime( i_anime );
+        }
+
+        public void SetClearRate( int i_rate )
+        {
+            if( Connected )
+            {
+                photonView.RPC( "SetClearRateRPC", PhotonTargets.All, i_rate );
+            }
+        }
+        [PunRPC]
+        private void SetClearRateRPC( int i_rate )
+        {
+            OnClearRate( i_rate );
         }
 
 
@@ -237,7 +285,24 @@ namespace HimonoLib
         public override void OnJoinedLobby()
         {
             // Debug.Log( "OnJoinedLobby" );
-            PhotonNetwork.JoinRandomRoom();
+            // PhotonNetwork.JoinRandomRoom();
+
+            var roomList = PhotonNetwork.GetRoomList();
+            if( roomList.Length <= 0 )
+            {
+                PhotonNetwork.CreateRoom( null );
+                return;
+            }
+
+            foreach( var room in roomList )
+            {
+                if( !room.open )
+                {
+                    continue;
+                }
+                PhotonNetwork.JoinRoom( room.name );
+                return;
+            }
         }
 
         public void OnPhotonRandomJoinFailed()
@@ -265,7 +330,7 @@ namespace HimonoLib
 
 
             m_networkUI.Connect = Connected;
-            m_networkUI.Lobby   = LobbyName;
+            m_networkUI.Lobby   = PhotonNetwork.inRoom ? PhotonNetwork.room.playerCount.ToString() : "";
             m_networkUI.Room    = RoomName;
         }
 

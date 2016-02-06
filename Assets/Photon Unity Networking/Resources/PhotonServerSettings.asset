@@ -43,4 +43,6 @@ MonoBehaviour:
   - InitPoseRPC
   - SendPoseRPC
   - StartGameRPC
+  - PlayDoorAnimeRPC
+  - SetClearRateRPC
   DisableAutoOpenWizard: 1

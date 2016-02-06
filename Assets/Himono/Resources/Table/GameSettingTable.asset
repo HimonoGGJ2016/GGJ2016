@@ -27,4 +27,15 @@ MonoBehaviour:
   m_armList:
   - {fileID: 11482978, guid: 073c6ded506055b469f3fb4fc1a434af, type: 2}
   - {fileID: 11495970, guid: 80164fa18e6100540817e0f0c369b6c2, type: 2}
-  m_gameTime: 5
+  m_gameTime: 30
+  m_resultList:
+  - m_sprite: {fileID: 21300000, guid: adb344b2dacc77f47a2cd744c1c8cd3f, type: 3}
+    m_score: 20
+  - m_sprite: {fileID: 21300000, guid: 2c0b148ec70130f4fb3778778d35241f, type: 3}
+    m_score: 40
+  - m_sprite: {fileID: 21300000, guid: 101d23de387d27b4d9d2ebd85f54bfa3, type: 3}
+    m_score: 60
+  - m_sprite: {fileID: 21300000, guid: f5c9816618001db499768b8a864ef0e6, type: 3}
+    m_score: 80
+  - m_sprite: {fileID: 21300000, guid: 0dedb1b6178678047bc4ac678861b04b, type: 3}
+    m_score: 100
