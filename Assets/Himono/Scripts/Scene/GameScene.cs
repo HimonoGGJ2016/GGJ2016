@@ -11,7 +11,7 @@ using System.Collections;
 
 namespace HimonoLib
 {
-    public class GameScene : SceneBase
+    public class GameScene : Photon.MonoBehaviour
     {
     
     #region Variable
@@ -32,10 +32,13 @@ namespace HimonoLib
         private int         m_selectArmR    = 0;
         private int         m_selectArmL    = 0;
 
+        private const int DEFAULT_ARM_INDEX_L   = 0;
+        private const int DEFAULT_ARM_INDEX_R   = 1000;
+
     #endregion // Variable
 
 
-        #region Property
+    #region Property
 
         private bool ActivateTime
         {
@@ -82,23 +85,35 @@ namespace HimonoLib
 
         }
 
+        private string OpenDoorAnimationName
+        {
+            get
+            {
+                return GameSettingManager.Table.m_coreGameData.m_openDoorAnimation;
+            }
+        }
+
+        private string CloseDoorAnimationName
+        {
+            get
+            {
+                return GameSettingManager.Table.m_coreGameData.m_closeDoorAnimation;
+            }
+        }
+
     #endregion // Property
 
-    
-    #region Public
 
-    #endregion // Public
+        #region Public
 
-    
+        #endregion // Public
+
+
     #region UnityEvent
 
-        protected override void AwakeImpl()
+        void Awake()
         {
             NetworkManager.Instance.OnChangeArm  += OnChangePower;
-            NetworkManager.Instance.OnSetPose   += OnSetPose;
-            NetworkManager.Instance.OnInitPose += OnInitPose;
-            NetworkManager.Instance.OnStartGame += OnStartGame;
-            NetworkManager.Instance.OnDoorAnime += PlayDoorAnimation;
             NetworkManager.Instance.OnClearRate += OnSetClearRate;
 
             m_time      = GameSettingManager.Table.m_gameTime;
@@ -106,36 +121,109 @@ namespace HimonoLib
 
 
 
-            InstantiateHands( HandPointLeftTag,     0,      GameSettingManager.Instance.GetArm( EArmType.LeftA ) );
-            InstantiateHands( HandPointRightTag,    1000,   GameSettingManager.Instance.GetArm( EArmType.RightA ) );
+            InstantiateHands( HandPointLeftTag,     DEFAULT_ARM_INDEX_L,    GameSettingManager.Instance.GetArm( EArmType.LeftA ) );
+            InstantiateHands( HandPointRightTag,    DEFAULT_ARM_INDEX_R,    GameSettingManager.Instance.GetArm( EArmType.RightA ) );
 
             NetworkManager.Instance.ActivateUI  = false;
         }
 
-        protected override void StartImpl()
+        void Start()
         {
-            m_selectL   = m_armList.Find( value => value.ID == 0 );
-            m_selectR   = m_armList.Find( value => value.ID == 1000 );
+            m_selectL   = m_armList.Find( value => value.ID == DEFAULT_ARM_INDEX_L );
+            m_selectR   = m_armList.Find( value => value.ID == DEFAULT_ARM_INDEX_R );
 
             if( NetworkManager.Instance.IsMasterClient )
             {
-                StartCoroutine( PoseState() );
+                StartCoroutine( WaitPlayerState() );
+            }
+            else
+            {
+                StartCoroutine( ReadyState() );
             }
 
         }
 
-        protected override void UpdateImpl()
+        void Update()
         {
             TimeText    = m_time;
-
-
-            //             NetworkManager.Instance.SendArmPower( 1, hPowerL );
-            //             NetworkManager.Instance.SendArmPower( 2, vPowerL );
-            //             NetworkManager.Instance.SendArmPower( 4, hPowerR );
-            //             NetworkManager.Instance.SendArmPower( 5, vPowerR );
         }
 
     #endregion // UnityEvent
+
+
+    #region Network
+
+        private void SetPose( object i_angleList )
+        {
+            if( NetworkManager.Instance.OfflineMode )
+            {
+                SetPoseRPC( i_angleList );
+                return;
+            }
+            photonView.RPC( "SetPoseRPC", PhotonTargets.All, i_angleList );
+        }
+        [PunRPC]
+        private void SetPoseRPC( object i_angleList )
+        {
+            var list    = (float[])i_angleList;
+            for( int i = 0, j = 0; j < m_armList.Count; i += 1, ++j )
+            {
+                //var value = list[i];
+                m_armList[ j ].SetPose( list[ i ], list[ i ], list[ i ] );
+            }
+        }
+
+        public void ResetPose()
+        {
+            if( NetworkManager.Instance.OfflineMode )
+            {
+                ResetPoseRPC();
+                return;
+            }
+
+            photonView.RPC( "ResetPoseRPC", PhotonTargets.All );
+        }
+        [PunRPC]
+        private void ResetPoseRPC()
+        {
+            foreach( var arm in m_armList )
+            {
+                arm.InitRot();
+            }
+        }
+
+        public void StartGame()
+        {
+            if( NetworkManager.Instance.OfflineMode )
+            {
+                StartGameRPC();
+                return;
+            }
+
+            photonView.RPC( "StartGameRPC", PhotonTargets.All );
+        }
+        [PunRPC]
+        private void StartGameRPC()
+        {
+            StartCoroutine( GameState() );
+        }
+
+        public void PlayDoorAnimation( string i_anime )
+        {
+            if( NetworkManager.Instance.OfflineMode )
+            {
+                PlayDoorAnimationRPC( i_anime );
+                return;
+            }
+            photonView.RPC( "PlayDoorAnimationRPC", PhotonTargets.All, i_anime );
+        }
+        [PunRPC]
+        private void PlayDoorAnimationRPC( string i_anime )
+        {
+            m_doorAnimator.Play( i_anime );
+        }
+
+    #endregion // Network
 
 
     #region Private
@@ -150,7 +238,13 @@ namespace HimonoLib
                     var point   = sorted[ i ].transform;
                     var obj     = GameObject.Instantiate( i_res ) as AsuraArm;
                     obj.transform.SetParent( point, false );
+
                     obj.ID      = i_firstID + i;
+                    obj.ActiveColorL        = GameSettingManager.Table.m_coreGameData.m_armData.m_activeArmColorL;
+                    obj.ActiveColorR        = GameSettingManager.Table.m_coreGameData.m_armData.m_activeArmColorR;
+                    obj.ActiveColorCurve    = GameSettingManager.Table.m_coreGameData.m_armData.m_activeArmCurve;
+                    obj.ActivateColorTime   = GameSettingManager.Table.m_coreGameData.m_armData.m_activeArmTime;
+
                     m_armList.Add( obj );
                 }
             }
@@ -158,6 +252,9 @@ namespace HimonoLib
 
         private void UpdateControl()
         {
+            ControlSelectArm();
+            ControlMoveArm();
+            return;
             if( m_selectL != null )
             {
                 int vPower  = Mathf.RoundToInt( Input.GetAxis( "Vertical" ) * 10.0f );
@@ -217,6 +314,32 @@ namespace HimonoLib
             }
         }
 
+        private void ControlSelectArm()
+        {
+            for( int i = (int)GamepadInput.GamePad.Index.One; i <= (int)GamepadInput.GamePad.Index.Four; ++i )
+            {
+                var index   = ( GamepadInput.GamePad.Index )i;
+
+                if( GamepadInput.GamePad.GetButtonDown( GamepadInput.GamePad.Button.LeftShoulder, index ) )
+                {
+//                     m_selectL.Activate  = false;
+//                     m_selectL           = NextArm( m_selectL, DEFAULT_ARM_INDEX_L, 1 );
+//                     m_selectL.Activate  = true;
+                }
+                if( GamepadInput.GamePad.GetButtonDown( GamepadInput.GamePad.Button.RightShoulder, index ) )
+                {
+//                     m_selectR.Activate  = false;
+//                     m_selectR           = NextArm( m_selectR, DEFAULT_ARM_INDEX_R, 1 );
+//                     m_selectR.Activate  = true;
+                }
+            }
+        }
+
+        private void ControlMoveArm()
+        {
+
+        }
+
         private AsuraArm NextArm( AsuraArm i_arm, int i_default, int i_add )
         {
             if( i_arm == null )
@@ -247,33 +370,6 @@ namespace HimonoLib
             }
         }
 
-        private void OnSetPose( object i_value )
-        {
-            var list    = ( float[] )i_value;
-            for( int i = 0, j = 0; j < m_armList.Count; i+=1, ++j )
-            {
-                //var value = list[i];
-                m_armList[ j ].SetPose( list[ i ], list[ i ], list[ i ] );
-            }
-        }
-
-        private void OnInitPose()
-        {
-            foreach( var arm in m_armList )
-            {
-                arm.InitRot();
-            }
-        }
-
-        private void OnStartGame()
-        {
-            StartCoroutine( GameState() );
-        }
-
-        private void PlayDoorAnimation( string i_anime )
-        {
-            m_doorAnimator.Play( i_anime );
-        }
 
         private void OnSetClearRate( int rate )
         {
@@ -281,17 +377,25 @@ namespace HimonoLib
             Debug.Log( rate );
         }
 
+    #endregion // Private
 
 
-        #endregion // Private
+    #region State
 
+        private IEnumerator ReadyState()
+        {
+            yield return new WaitForSeconds( 1.0f );
+        }
 
-        #region State
+        private IEnumerator WaitPlayerState()
+        {
+            yield return new WaitForSeconds( 1.0f );
+            StartCoroutine( PoseState() );
+        }
 
         private IEnumerator PoseState()
         {
-            yield return new WaitForSeconds( 1.0f );
-
+            yield return null;
 
             {
                 var randList = new List< float >();
@@ -300,31 +404,34 @@ namespace HimonoLib
                     randList.Add( Random.Range( -45.0f, 45.0f ) );
                 }
 
-                NetworkManager.Instance.SendPose( randList.ToArray() );
-                NetworkManager.Instance.PlayDoorAnime( "open" );
+                SetPose( randList.ToArray() );
+                PlayDoorAnimation( OpenDoorAnimationName );
             }
             
+//             yield return new WaitForSeconds( 5.0f );
+// 
+// 
+//             PlayDoorAnimation( CloseDoorAnimationName );
+// 
+//             yield return new WaitForSeconds( 2.0f );
+// 
+// 
+//             GameInformation.Instance.SetTargetPose( m_armList.ToArray() );
+//             ResetPose();
+// 
+//             yield return new WaitForSeconds( 1.0f );
 
-            yield return new WaitForSeconds( 5.0f );
-
-            NetworkManager.Instance.PlayDoorAnime( "close" );
-
-            yield return new WaitForSeconds( 2.0f );
-
-            GameInformation.Instance.SetTargetPose( m_armList.ToArray() );
-
-            NetworkManager.Instance.InitPose();
-
-            yield return new WaitForSeconds( 1.0f );
-
-            NetworkManager.Instance.PlayDoorAnime( "open" );
-
-            NetworkManager.Instance.StartGame();
+            PlayDoorAnimation( OpenDoorAnimationName );
+            StartGame();
         }
 
         private IEnumerator GameState()
         {
-            ActivateTime    = true;
+            ActivateTime        = true;
+//             m_selectL.Activate  = true;
+//             m_selectR.Activate  = true;
+
+
             yield return null;
 
             while( m_time > 0.0f )
@@ -334,24 +441,25 @@ namespace HimonoLib
                 yield return null;
             }
 
-
-
             if( NetworkManager.Instance.IsMasterClient )
             {
-                
-                NetworkManager.Instance.PlayDoorAnime( "close" );
-
-                yield return new WaitForSeconds( 2.0f );
-
-                int rate = GameInformation.Instance.SetResultPose( m_armList.ToArray() );
-                NetworkManager.Instance.SetClearRate( rate );
-
-                NetworkManager.Instance.ChangeSceneAllPlayer( EScene.Result );
+                StartCoroutine( EndGameState() );
             }
-            
         }
 
-        #endregion // State
+        private IEnumerator EndGameState()
+        {
+            PlayDoorAnimation( CloseDoorAnimationName );
+
+            yield return new WaitForSeconds( 2.0f );
+
+            int rate = GameInformation.Instance.SetResultPose( m_armList.ToArray() );
+            NetworkManager.Instance.SetClearRate( rate );
+
+            NetworkManager.Instance.ChangeSceneAllPlayer( EScene.Result );
+        }
+
+    #endregion // State
 
 
 

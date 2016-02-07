@@ -11,17 +11,40 @@ namespace HimonoLib
     public class GameInformation : SingletonAuto< GameInformation >
     {
 
-        #region Variable
+    #region Variable
+
+        private int m_localPlayerCount   = 0;
+
+
+
 
         private List< PoseData >    m_targetPoseList    = new List<PoseData>();
         private int m_clearRate = 0;
 
 
 
-        #endregion // Variable
+    #endregion // Variable
 
 
-        #region Property
+    #region Property
+
+        public int LocalPlayerCount
+        {
+            get
+            {
+                return m_localPlayerCount;
+            }
+            set
+            {
+                m_localPlayerCount  = value;
+            }
+
+        }
+
+
+
+
+
 
         public int ClearRate
         {
@@ -39,13 +62,15 @@ namespace HimonoLib
             }
         }
 
-        #endregion // Property
+    #endregion // Property
 
 
-        #region Public
+    #region Public
 
-        public void Initialize()
+        public void Reset()
         {
+            LocalPlayerCount    = 0;
+
             m_targetPoseList.Clear();
             m_clearRate = 0;
         }

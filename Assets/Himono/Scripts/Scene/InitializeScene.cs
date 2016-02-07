@@ -11,32 +11,32 @@ namespace HimonoLib
     public class InitializeScene : MonoBehaviour
     {
 
-        #region Variable
+    #region Variable
 
-        #endregion // Variable
-
-
-        #region Property
-
-        #endregion // Property
+    #endregion // Variable
 
 
-        #region Public
+    #region Property
 
-        #endregion // Public
+    #endregion // Property
 
 
-        #region UnityEvent
+    #region Public
+
+    #endregion // Public
+
+
+    #region UnityEvent
 
         void Start()
         {
             StartCoroutine( UpdateState() );
         }
 
-        #endregion // UnityEvent
+    #endregion // UnityEvent
 
 
-        #region Private
+    #region Private
 
         private IEnumerator UpdateState()
         {
@@ -45,17 +45,15 @@ namespace HimonoLib
                 yield return null;
             }
 
-            NetworkManager.Instance.ActivateUI  = true;
-
-            while( !NetworkManager.Instance.Connected )
-            {
-                yield return null;
-            }
+//             while( !NetworkManager.Instance.Connected )
+//             {
+//                 yield return null;
+//             }
 
             NetworkManager.Instance.ChangeScene( EScene.Title );
         }
 
-        #endregion // Private
+    #endregion // Private
 
 
     } // class InitializeScene

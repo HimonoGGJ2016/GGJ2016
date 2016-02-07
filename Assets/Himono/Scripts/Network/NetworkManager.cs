@@ -23,10 +23,6 @@ namespace HimonoLib
 
         public event System.Action< AsuraArm[] >    OnCollectArm        = (armList) => {};
         public event System.Action< int, int, int > OnChangeArm     = (armID, handID, power) => {};
-        public event System.Action< object >        OnSetPose       = (pose) => {};
-        public event System.Action                  OnInitPose      = () => {};
-        public event System.Action                  OnStartGame     = () => {};
-        public event System.Action< string >        OnDoorAnime     = (id) =>{};
         public event System.Action< int >        OnClearRate        = (rate) =>{};
 
     #endregion // Event
@@ -55,6 +51,21 @@ namespace HimonoLib
                 return PhotonNetwork.connected;
             }
         }
+
+        public bool OfflineMode
+        {
+            get
+            {
+                return PhotonNetwork.offlineMode;
+            }
+            set
+            {
+                PhotonNetwork.offlineMode   = value;
+            }
+        }
+
+
+
 
         public string LobbyName
         {
@@ -86,16 +97,12 @@ namespace HimonoLib
         #endregion // Property
 
 
-        #region Public
+    #region Public
 
         public void Reset()
         {
             OnCollectArm = ( armList ) => {};
             OnChangeArm = ( armID, handID, power ) => {};
-            OnSetPose = ( pose ) => {};
-            OnInitPose = () => {};
-            OnStartGame = () => {};
-            OnDoorAnime = ( id ) => {};
             OnClearRate = ( rate ) => {};
     }
 
@@ -117,12 +124,13 @@ namespace HimonoLib
 
         public void ChangeSceneAllPlayer( EScene i_scene )
         {
-            if( /*IsMasterClient &&*/ Connected )
+            if( OfflineMode )
             {
-                photonView.RPC( "ChangeScene_RPC", PhotonTargets.All, (int)i_scene );
+                ChangeScene( i_scene );
                 return;
             }
-            ChangeScene( i_scene );
+
+            photonView.RPC( "ChangeScene_RPC", PhotonTargets.All, (int)i_scene );
 
         }
         public void ChangeScene( EScene i_scene )
@@ -164,67 +172,7 @@ namespace HimonoLib
             OnChangeArm( i_armID, i_handID, i_power );
         }
 
-        public void SendPose( object i_angleList )
-        {
-            if( Connected )
-            {
-                photonView.RPC( "SendPoseRPC", PhotonTargets.All, i_angleList );
-            }
-        }
-        [PunRPC]
-        private void SendPoseRPC( object i_angleList )
-        {
 
-            OnSetPose( i_angleList );
-        }
-
-        public void InitPose( )
-        {
-            if( Connected )
-            {
-                photonView.RPC( "InitPoseRPC", PhotonTargets.All );
-            }
-        }
-        [PunRPC]
-        private void InitPoseRPC()
-        {
-
-            OnInitPose(  );
-        }
-
-        public void StartGame()
-        {
-            if( Connected )
-            {
-                
-                photonView.RPC( "StartGameRPC", PhotonTargets.All );
-            }
-
-            
-        }
-        [PunRPC]
-        private void StartGameRPC()
-        {
-            OnStartGame();
-
-            if( NetworkManager.Instance.IsMasterClient )
-            {
-                PhotonNetwork.room.open = false;
-            }
-        }
-
-        public void PlayDoorAnime( string i_anime)
-        {
-            if( Connected )
-            {
-                photonView.RPC( "PlayDoorAnimeRPC", PhotonTargets.All, i_anime );
-            }
-        }
-        [PunRPC]
-        private void PlayDoorAnimeRPC( string i_anime )
-        {
-            OnDoorAnime( i_anime );
-        }
 
         public void SetClearRate( int i_rate )
         {
@@ -243,7 +191,7 @@ namespace HimonoLib
         #endregion // Public
 
 
-        #region UnityEvent
+    #region UnityEvent
 
         void Awake()
         {
@@ -255,21 +203,22 @@ namespace HimonoLib
 
             Instance    = this;
             DontDestroyOnLoad( gameObject );
+
+            if( photonView.viewID == 0 )
+            {
+                photonView.viewID   = 1;
+            }
         }
 
         void Start()
         {
-            Connect();
+            ActivateUI  = false;
+            // Connect();
         }
 
         void Update()
         {
             ApplyUI();
-            // Debug.LogFormat( "Horizontal={0}", Input.GetButtonDown( "SelectR" ) );
-            
-//             Debug.LogFormat( "Horizontal={0}", Input.GetAxis( "HorizontalDPad" ) );
-//             Debug.LogFormat( "Vertical={0}", Input.GetAxis( "VerticalDPad" ) );
-
         }
 
     #endregion // UnityEvent

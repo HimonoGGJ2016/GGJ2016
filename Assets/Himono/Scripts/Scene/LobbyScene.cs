@@ -5,79 +5,52 @@
 //------------------------------------------------------------------------
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
 namespace HimonoLib
 {
-    public class LobbyScene : SceneBase
+    public class LobbyScene : MonoBehaviour
     {
     
     #region Variable
 
-        [SerializeField]
-        private Button  m_startButton   = null;
-        [SerializeField]
-        private Button  m_loginButton   = null;
-
-        #endregion // Variable
-
-
-        #region Property
-
-        public bool ShowLoginButton
+        private enum EMenu
         {
-            set
-            {
-                if( m_loginButton == null )
-                {
-                    return;
+            None,
+            Wait,
 
-                }
-                m_loginButton.gameObject.SetActive( value );
-            }
+            Mode,
+            OfflineCount,
+            OnlineLogin,
         }
 
-        public bool ShowStartButton
-        {
-            set
-            {
-                if( m_startButton == null )
-                {
-                    return;
+        [SerializeField, EnumListLabel( typeof( EMenu ) ) ]
+        private GameObject[]  m_modeUIList  = null;
 
-                }
-                m_startButton.gameObject.SetActive( value );
-            }
-        }
+
+    #endregion // Variable
+
+
+    #region Property
+
 
     #endregion // Property
 
     
     #region Public
 
-        public void Join()
+
+
+    #endregion // Public
+
+
+    #region UnityEvent
+
+        void Awake()
         {
-            NetworkManager.Instance.Join( OnJoined );
-            ShowLoginButton = false;
-        }
+            GameInformation.Instance.Reset();
 
-        public void StartGame()
-        {
-            NetworkManager.Instance.ChangeSceneAllPlayer( EScene.Game );
-        }
-
-
-        #endregion // Public
-
-
-        #region UnityEvent
-
-        protected override void AwakeImpl()
-        {
-            ShowStartButton = false;
-
-            NetworkManager.Instance.ActivateUI = true;
-
-            GameInformation.Instance.Initialize();
+            SetMenuUI( EMenu.Mode );
         }
 
     #endregion // UnityEvent
@@ -85,20 +58,93 @@ namespace HimonoLib
 
     #region Callback
 
-        private void OnJoined()
+        public void OnSelectedOffline()
         {
-            if( NetworkManager.Instance.Connected )
+            NetworkManager.Instance.OfflineMode = true;
+            OnMenuOfflineCount();
+        }
+
+        public void OnSelectedOnline()
+        {
+            NetworkManager.Instance.OfflineMode = false;
+            GameInformation.Instance.LocalPlayerCount   = 1;
+        }
+
+        public void OnSetOfflineCount( int i_count )
+        {
+            GameInformation.Instance.LocalPlayerCount   = i_count;
+            NetworkManager.Instance.ChangeSceneAllPlayer( EScene.Game );
+            if( NetworkManager.Instance.IsMasterClient && PhotonNetwork.room != null )
             {
-                ShowStartButton = true;
+                PhotonNetwork.room.open = false;
             }
         }
+
+
+        public void OnMenuMode()
+        {
+            SetMenuUI( EMenu.Mode );
+        }
+
+        public void OnMenuOfflineCount()
+        {
+            SetMenuUI( EMenu.OfflineCount );
+        }
+
 
     #endregion // Callback
 
     
     #region Private
 
+        private void SetMenuUI( EMenu i_menu )
+        {
+            if( m_modeUIList == null || m_modeUIList.Length <= 0 )
+            {
+                return;
+            }
+
+            int index   = (int)i_menu;
+            for( int i = 0, size = m_modeUIList.Length; i < size; ++i )
+            {
+                var ui  = m_modeUIList[ i ];
+                if( ui != null )
+                {
+                    ui.SetActive( i == index );
+                }
+            }
+        }
+
     #endregion // Private
+
+
+    #region State
+
+        private IEnumerator OnlineConnectState()
+        {
+
+            if( NetworkManager.Instance == null )
+            {
+                OnMenuMode();
+                yield break;
+            }
+
+            if( !NetworkManager.Instance.Connected )
+            {
+                NetworkManager.Instance.Connect();
+                while( !NetworkManager.Instance.Connected )
+                {
+                    yield return null;
+                }
+            }
+
+            // NetworkManager.Instance.Join( OnJoined );
+
+        }
+
+
+
+    #endregion // State
 
 
     } // class LobbyScene

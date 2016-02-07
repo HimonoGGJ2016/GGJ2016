@@ -13,9 +13,15 @@ namespace HimonoLib
     public class GameSettingTable : ScriptableObject
     {
         [SerializeField]
-        public GameObject   m_fadeResource  = null;
+        public GameObject   m_fadeResource      = null;
+        [SerializeField]
+        public GameObject   m_networkResource   = null;
+
+
         [SerializeField, EnumListLabel( typeof( EScene ) )]
         public SceneData[]  m_sceneList     = null;
+        [SerializeField]
+        public CoreGameData m_coreGameData  = new CoreGameData();
         [SerializeField]
         public string       m_handResource  = null;
         [SerializeField]
@@ -77,6 +83,24 @@ namespace HimonoLib
             return null;
         }
 
+        public GameObject InstantiateNetworkObject()
+        {
+            var res = m_table.m_networkResource;
+            if( res != null )
+            {
+                return GameObject.Instantiate( res ) as GameObject;
+            }
+            return null;
+        }
+
+
+
+
+
+
+
+
+
         public string GetSceneName( EScene i_scene )
         {
             var sceneList   = m_table.m_sceneList;
@@ -116,6 +140,30 @@ namespace HimonoLib
     }
 
     [System.Serializable]
+    public struct CoreGameData
+    {
+        [SerializeField]
+        public string   m_openDoorAnimation;
+        [SerializeField]
+        public string   m_closeDoorAnimation;
+        [SerializeField]
+        public ArmData  m_armData;
+    }
+
+    [System.Serializable]
+    public struct ArmData
+    {
+        [SerializeField]
+        public Color    m_activeArmColorR;
+        [SerializeField]
+        public Color    m_activeArmColorL;
+        [SerializeField]
+        public AnimationCurve   m_activeArmCurve;
+        [SerializeField]
+        public float            m_activeArmTime;
+    }
+
+    [System.Serializable]
     public struct ResultData
     {
         [SerializeField]
@@ -123,6 +171,8 @@ namespace HimonoLib
         [SerializeField]
         public int      m_score;
     }
+
+
 
 } // namespace HimonoLib
 

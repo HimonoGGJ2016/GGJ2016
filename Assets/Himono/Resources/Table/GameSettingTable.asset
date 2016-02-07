@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Name: GameSettingTable
   m_EditorClassIdentifier: 
   m_fadeResource: {fileID: 107706, guid: 9d6f25bd985effe4c9ff7df900ce2246, type: 2}
+  m_networkResource: {fileID: 110464, guid: aea61d441b938094985693a9da3c3be5, type: 2}
   m_sceneList:
   - m_name: Initialize
     m_bgm: {fileID: 0}
@@ -21,6 +22,29 @@ MonoBehaviour:
     m_bgm: {fileID: 8300000, guid: ea75b2acb88ee634c8f2bdeee276fb65, type: 3}
   - m_name: Result
     m_bgm: {fileID: 0}
+  m_coreGameData:
+    m_openDoorAnimation: open
+    m_closeDoorAnimation: close
+    m_armData:
+      m_activeArmColorR: {r: 0, g: 0, b: 0, a: 1}
+      m_activeArmColorL: {r: 1, g: 1, b: 0, a: 1}
+      m_activeArmCurve:
+        serializedVersion: 2
+        m_Curve:
+        - time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 0
+        m_PostInfinity: 0
+        m_RotationOrder: 0
+      m_activeArmTime: 1
   m_handResource: Game/Asura/Hand
   m_handPointLTag: HandPointL
   m_handPointRTag: HandPointR
