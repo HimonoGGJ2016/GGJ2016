@@ -21,5 +21,11 @@ namespace HimonoLib
         LeftA,
     }
 
+    public enum EDifficulty
+    {
+        Normal,
+        Hard,
+    }
+        
 } // namespace HimonoLib
 

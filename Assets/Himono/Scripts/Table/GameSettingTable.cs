@@ -147,6 +147,8 @@ namespace HimonoLib
         [SerializeField]
         public string   m_closeDoorAnimation;
         [SerializeField]
+        public ControlData  m_controlData;
+        [SerializeField]
         public ArmData  m_armData;
     }
 
@@ -154,13 +156,26 @@ namespace HimonoLib
     public struct ArmData
     {
         [SerializeField]
-        public Color    m_activeArmColorR;
-        [SerializeField]
-        public Color    m_activeArmColorL;
+        public Color[]          m_activeColors;
         [SerializeField]
         public AnimationCurve   m_activeArmCurve;
         [SerializeField]
         public float            m_activeArmTime;
+        [SerializeField]
+        public float            m_limitBackAngle;
+        [SerializeField]
+        public float            m_limitCenterAngle;
+        [SerializeField]
+        public float            m_limitFrontAngle;
+    }
+
+    [System.Serializable]
+    public struct ControlData
+    {
+        [SerializeField]
+        public float    m_enableAxis;
+        [SerializeField]
+        public float    m_armPower;
     }
 
     [System.Serializable]

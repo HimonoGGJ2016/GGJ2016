@@ -50,6 +50,8 @@ namespace HimonoLib
 //                 yield return null;
 //             }
 
+            NetworkManager.Instance.ActivateUI  = false;
+
             NetworkManager.Instance.ChangeScene( EScene.Title );
         }
 

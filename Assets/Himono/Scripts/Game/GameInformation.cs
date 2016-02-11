@@ -13,8 +13,8 @@ namespace HimonoLib
 
     #region Variable
 
-        private int m_localPlayerCount   = 0;
-
+        private int         m_localPlayerCount  = 0;
+        private EDifficulty m_difficulty        = default( EDifficulty );
 
 
 
@@ -38,7 +38,18 @@ namespace HimonoLib
             {
                 m_localPlayerCount  = value;
             }
+        }
 
+        public EDifficulty Difficulty
+        {
+            get
+            {
+                return m_difficulty;
+            }
+            set
+            {
+                m_difficulty    = value;
+            }
         }
 
 
@@ -70,16 +81,18 @@ namespace HimonoLib
         public void Reset()
         {
             LocalPlayerCount    = 0;
+            m_difficulty        = default( EDifficulty );
 
             m_targetPoseList.Clear();
             m_clearRate = 0;
+
         }
 
         public void SetTargetPose( AsuraArm[ ] i_armList )
         {
             foreach( var arm in i_armList )
             {
-                m_targetPoseList.Add( new PoseData( arm.ID, arm.FrontAngle, arm.CenterAngle, arm.BackAnglet ) );
+                m_targetPoseList.Add( new PoseData( arm.ID, arm.Angles ) );
             }
         }
 
@@ -107,7 +120,7 @@ namespace HimonoLib
 //                 }
 // 
                 {
-                    float angle = arm.BackAnglet - pose.m_back;
+                    float angle = arm.Angles.x - pose.m_angles.x;
                     if( Mathf.Abs( angle ) <= ClearAngle )
                     {
                         clearCount++;
@@ -128,29 +141,25 @@ namespace HimonoLib
         #endregion // Public
 
 
-        #region UnityEvent
+    #region UnityEvent
 
         #endregion // UnityEvent
 
 
-        #region Private
+    #region Private
 
         #endregion // Private
 
         private struct PoseData
         {
-            public PoseData( int i_id, float i_fornt, float i_center, float i_back )
+            public PoseData( int i_id, Vector3 i_angles )
             {
-                m_id    = i_id;
-                m_front = i_fornt;
-                m_center = i_center;
-                m_back = i_back;
+                m_id        = i_id;
+                m_angles    = i_angles;
             }
 
             public int      m_id;
-            public float    m_front;
-            public float    m_center;
-            public float    m_back;
+            public Vector3  m_angles;
         }
 
 

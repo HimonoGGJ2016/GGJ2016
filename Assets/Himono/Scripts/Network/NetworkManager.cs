@@ -22,7 +22,6 @@ namespace HimonoLib
     #region Event
 
         public event System.Action< AsuraArm[] >    OnCollectArm        = (armList) => {};
-        public event System.Action< int, int, int > OnChangeArm     = (armID, handID, power) => {};
         public event System.Action< int >        OnClearRate        = (rate) =>{};
 
     #endregion // Event
@@ -102,7 +101,6 @@ namespace HimonoLib
         public void Reset()
         {
             OnCollectArm = ( armList ) => {};
-            OnChangeArm = ( armID, handID, power ) => {};
             OnClearRate = ( rate ) => {};
     }
 
@@ -157,21 +155,6 @@ namespace HimonoLib
         {
             OnCollectArm( GameObject.FindObjectsOfType< AsuraArm >() );
         }
-
-        public void SendArmPower( int i_armID, int i_handID, int i_power )
-        {
-            if( Connected )
-            {
-                photonView.RPC( "SendArmPowerRPC", PhotonTargets.All, i_armID, i_handID, i_power );
-            }
-            
-        }
-        [PunRPC]
-        private void SendArmPowerRPC( int i_armID, int i_handID, int i_power )
-        {
-            OnChangeArm( i_armID, i_handID, i_power );
-        }
-
 
 
         public void SetClearRate( int i_rate )

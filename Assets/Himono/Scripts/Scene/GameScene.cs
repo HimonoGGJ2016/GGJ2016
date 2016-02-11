@@ -16,6 +16,13 @@ namespace HimonoLib
     
     #region Variable
 
+        private enum ESetPoseOption
+        {
+            None,
+
+            Target,
+        }
+
         [SerializeField]
         private GameObject  m_timePanel = null;
         [SerializeField]
@@ -27,10 +34,8 @@ namespace HimonoLib
 
         private List< AsuraArm >    m_armList   = new List<AsuraArm>();
 
-        private AsuraArm    m_selectR   = null;
-        private AsuraArm    m_selectL   = null;
-        private int         m_selectArmR    = 0;
-        private int         m_selectArmL    = 0;
+        private Dictionary< int, AsuraArm > m_selectArmsR   = new Dictionary<int, AsuraArm>();
+        private Dictionary< int, AsuraArm > m_selectArmsL   = new Dictionary<int, AsuraArm>();
 
         private const int DEFAULT_ARM_INDEX_L   = 0;
         private const int DEFAULT_ARM_INDEX_R   = 1000;
@@ -64,6 +69,31 @@ namespace HimonoLib
 
                 value   = Mathf.Max( 0.0f, value );
                 m_timeText.text = value.ToString( "F2" );
+            }
+        }
+
+        private int LocalPlayerCount
+        {
+            get
+            {
+                return GameInformation.Instance.LocalPlayerCount;
+            }
+        }
+
+        private EDifficulty Difficulty
+        {
+            get
+            {
+                return GameInformation.Instance.Difficulty;
+            }
+        }
+
+        private Vector3 LimitArmAngles
+        {
+            get
+            {
+                var data    = GameSettingManager.Table.m_coreGameData.m_armData;
+                return new Vector3( data.m_limitBackAngle, data.m_limitCenterAngle, data.m_limitFrontAngle );
             }
         }
 
@@ -104,16 +134,10 @@ namespace HimonoLib
     #endregion // Property
 
 
-        #region Public
-
-        #endregion // Public
-
-
     #region UnityEvent
 
         void Awake()
         {
-            NetworkManager.Instance.OnChangeArm  += OnChangePower;
             NetworkManager.Instance.OnClearRate += OnSetClearRate;
 
             m_time      = GameSettingManager.Table.m_gameTime;
@@ -129,8 +153,11 @@ namespace HimonoLib
 
         void Start()
         {
-            m_selectL   = m_armList.Find( value => value.ID == DEFAULT_ARM_INDEX_L );
-            m_selectR   = m_armList.Find( value => value.ID == DEFAULT_ARM_INDEX_R );
+            for( int i = 0; i < LocalPlayerCount; ++i )
+            {
+                m_selectArmsR.Add( i + 1, null );
+                m_selectArmsL.Add( i + 1, null );
+            }
 
             if( NetworkManager.Instance.IsMasterClient )
             {
@@ -153,23 +180,30 @@ namespace HimonoLib
 
     #region Network
 
-        private void SetPose( object i_angleList )
+        private void SetPose( object i_angleList, ESetPoseOption i_option = ESetPoseOption.None )
         {
             if( NetworkManager.Instance.OfflineMode )
             {
-                SetPoseRPC( i_angleList );
+                SetPoseRPC( i_angleList, (int)i_option );
                 return;
             }
-            photonView.RPC( "SetPoseRPC", PhotonTargets.All, i_angleList );
+            photonView.RPC( "SetPoseRPC", PhotonTargets.All, i_angleList, (int)i_option );
         }
         [PunRPC]
-        private void SetPoseRPC( object i_angleList )
+        private void SetPoseRPC( object i_angleList, int i_option )
         {
-            var list    = (float[])i_angleList;
-            for( int i = 0, j = 0; j < m_armList.Count; i += 1, ++j )
+            var list    = (Vector3[])i_angleList;
+            for( int i = 0; i < list.Length; ++i )
             {
-                //var value = list[i];
-                m_armList[ j ].SetPose( list[ i ], list[ i ], list[ i ] );
+                var value = list[i];
+                m_armList[ i ].SetPose( value );
+            }
+
+            var op  = (ESetPoseOption)i_option;
+
+            if( op == ESetPoseOption.Target )
+            {
+                GameInformation.Instance.SetTargetPose( m_armList.ToArray() );
             }
         }
 
@@ -208,6 +242,42 @@ namespace HimonoLib
             StartCoroutine( GameState() );
         }
 
+        private void EndGame()
+        {
+            if( NetworkManager.Instance.OfflineMode )
+            {
+                EndGameRPC();
+                return;
+            }
+
+            photonView.RPC( "EndGameRPC", PhotonTargets.All );
+        }
+        [PunRPC]
+        private void EndGameRPC()
+        {
+            StartCoroutine( ScoreState() );
+        }
+
+        public void SendArmPower( int i_armID, int i_handID, int i_power )
+        {
+            if( NetworkManager.Instance.OfflineMode )
+            {
+                SendArmPowerRPC( i_armID, i_handID, i_power );
+                return;
+            }
+
+            photonView.RPC( "SendArmPowerRPC", PhotonTargets.All, i_armID, i_handID, i_power );
+        }
+        [PunRPC]
+        private void SendArmPowerRPC( int i_armID, int i_handID, int i_power )
+        {
+            var arm = m_armList.FirstOrDefault( value => value.ID == i_armID );
+            if( arm != null )
+            {
+                arm.RotateArm( i_handID, i_power * Time.deltaTime );
+            }
+        }
+
         public void PlayDoorAnimation( string i_anime )
         {
             if( NetworkManager.Instance.OfflineMode )
@@ -226,128 +296,107 @@ namespace HimonoLib
     #endregion // Network
 
 
-    #region Private
-
-        private void InstantiateHands( string i_tag, int i_firstID, AsuraArm i_res )
-        {
-            {
-                var list = GameObject.FindGameObjectsWithTag( i_tag );
-                var sorted  = list.OrderBy( value => value.transform.position.y ).ToArray();
-                for( int i = 0, size = sorted.Length; i < size; ++i )
-                {
-                    var point   = sorted[ i ].transform;
-                    var obj     = GameObject.Instantiate( i_res ) as AsuraArm;
-                    obj.transform.SetParent( point, false );
-
-                    obj.ID      = i_firstID + i;
-                    obj.ActiveColorL        = GameSettingManager.Table.m_coreGameData.m_armData.m_activeArmColorL;
-                    obj.ActiveColorR        = GameSettingManager.Table.m_coreGameData.m_armData.m_activeArmColorR;
-                    obj.ActiveColorCurve    = GameSettingManager.Table.m_coreGameData.m_armData.m_activeArmCurve;
-                    obj.ActivateColorTime   = GameSettingManager.Table.m_coreGameData.m_armData.m_activeArmTime;
-
-                    m_armList.Add( obj );
-                }
-            }
-        }
+    #region Control
 
         private void UpdateControl()
         {
             ControlSelectArm();
             ControlMoveArm();
             return;
-            if( m_selectL != null )
-            {
-                int vPower  = Mathf.RoundToInt( Input.GetAxis( "Vertical" ) * 10.0f );
-                if( Mathf.Abs( vPower ) < 2 )
-                {
-                    vPower = 0;
-                }
-
-                NetworkManager.Instance.SendArmPower( m_selectL.ID, 0, vPower );
-
-
-//                 int hPowerL = Mathf.RoundToInt( Input.GetAxis( "Horizontal" ) * 10.0f );
-//                 if( hPowerL < 2 )
-//                 {
-//                     hPowerL = 0;
-//                 }
-
-                if( Input.GetButtonDown( "SelectL" )/* || Input.GetButtonDown( "" )*/ )
-                {
-                    m_selectL = NextArm( m_selectL, 0, 1 );
-                }
-
-                if( Input.GetButtonDown( "SelectL2" ) )
-                {
-                    m_selectArmL++;
-                    m_selectArmL    %= 3;
-                }
-            }
-
-            if( m_selectR != null )
-            {
-                int vPower  = Mathf.RoundToInt( Input.GetAxis( "VerticalDPad" ) * 10.0f );
-                if( Mathf.Abs( vPower ) < 2 )
-                {
-                    vPower  = 0;
-                }
-
-                NetworkManager.Instance.SendArmPower( m_selectR.ID, 0, vPower );
-
-
-//                 int hPowerL = Mathf.RoundToInt( Input.GetAxis( "HorizontalDPad" ) * 10.0f );
-//                 if( hPowerL < 2 )
-//                 {
-//                     hPowerL = 0;
-//                 }
-
-                if( Input.GetButtonDown( "SelectR" )/* || Input.GetButtonDown( "" )*/ )
-                {
-                    m_selectR = NextArm( m_selectR, 1000, 1 );
-                }
-
-                if( Input.GetButtonDown( "SelectR2" ) )
-                {
-                    m_selectArmR++;
-                    m_selectArmR %= 3;
-                }
-            }
         }
 
         private void ControlSelectArm()
         {
-            for( int i = (int)GamepadInput.GamePad.Index.One; i <= (int)GamepadInput.GamePad.Index.Four; ++i )
+            int startIndex  = (int)GamepadInput.GamePad.Index.One;
+            for( int i = startIndex; i < startIndex + GameInformation.Instance.LocalPlayerCount; ++i )
             {
                 var index   = ( GamepadInput.GamePad.Index )i;
 
                 if( GamepadInput.GamePad.GetButtonDown( GamepadInput.GamePad.Button.LeftShoulder, index ) )
                 {
-//                     m_selectL.Activate  = false;
-//                     m_selectL           = NextArm( m_selectL, DEFAULT_ARM_INDEX_L, 1 );
-//                     m_selectL.Activate  = true;
+                    var arm     = GetActivateArm( i, false );
+                    var next    = NextArm( arm.ID, DEFAULT_ARM_INDEX_L, 1 );
+                    SetActivateArm( i, false, next );
                 }
                 if( GamepadInput.GamePad.GetButtonDown( GamepadInput.GamePad.Button.RightShoulder, index ) )
                 {
-//                     m_selectR.Activate  = false;
-//                     m_selectR           = NextArm( m_selectR, DEFAULT_ARM_INDEX_R, 1 );
-//                     m_selectR.Activate  = true;
+                    var arm     = GetActivateArm( i, true );
+                    var next    = NextArm( arm.ID, DEFAULT_ARM_INDEX_R, 1 );
+                    SetActivateArm( i, true, next );
                 }
             }
         }
 
         private void ControlMoveArm()
         {
+            int startIndex = (int)GamepadInput.GamePad.Index.One;
+            for( int i = startIndex; i < startIndex + GameInformation.Instance.LocalPlayerCount; ++i )
+            {
+                var index = (GamepadInput.GamePad.Index)i;
 
+                {
+                    Vector2 axis    = -GamepadInput.GamePad.GetAxis( GamepadInput.GamePad.Axis.LeftStick, index );
+                    if( ValidAxis( axis.x ) )
+                    {
+                        var power = ComputeArmMovePower( axis.x );
+                        var arm = GetActivateArm( i, false );
+                        SendArmPower( arm.ID, 0, power );
+                    }
+                }
+
+                {
+                    Vector2 axis = GamepadInput.GamePad.GetAxis( GamepadInput.GamePad.Axis.RightStick, index );
+                    if( ValidAxis( axis.x ) )
+                    {
+                        var power = ComputeArmMovePower( axis.x );
+                        var arm = GetActivateArm( i, true );
+                        SendArmPower( arm.ID, 0, power );
+                    }
+                }
+            }
         }
 
-        private AsuraArm NextArm( AsuraArm i_arm, int i_default, int i_add )
+        private bool ValidAxis( float i_axis )
         {
-            if( i_arm == null )
+            return Mathf.Abs( i_axis ) > GameSettingManager.Table.m_coreGameData.m_controlData.m_enableAxis;
+        }
+
+        private int ComputeArmMovePower( float i_axis )
+        {
+            float power = GameSettingManager.Table.m_coreGameData.m_controlData.m_armPower;
+            return Mathf.RoundToInt( i_axis * power );
+        }
+
+    #endregion // Control
+
+
+    #region Arm
+
+        private AsuraArm GetActivateArm( int i_localPlayerID, bool i_right )
+        {
+            var list = i_right ? m_selectArmsR : m_selectArmsL;
+            return list[ i_localPlayerID ];
+        }
+
+        private void SetActivateArm( int i_localPlayerID, bool i_right, AsuraArm i_arm )
+        {
+            var list    = i_right ? m_selectArmsR : m_selectArmsL;
+            var arm     = list[ i_localPlayerID ];
+            if( arm != null )
             {
-                return m_armList.Find( value => value.ID == i_default );
+                arm.Activate( false, i_localPlayerID );
+            }
+            if( i_arm != null )
+            {
+                i_arm.Activate( true, i_localPlayerID );
             }
 
-            int nextID  = i_arm.ID + i_add;
+            list[ i_localPlayerID ] = i_arm;
+        }
+
+        private AsuraArm NextArm( int i_id, int i_default, int i_add )
+        {
+            int nextID  = i_id + i_add;
             if( nextID >= i_default + 10 )
             {
                 nextID  = i_default;
@@ -360,22 +409,53 @@ namespace HimonoLib
             return m_armList.Find( value => value.ID == nextID );
         }
 
-
-        private void OnChangePower( int i_armID, int i_handID, int i_power )
+        private Vector3[ ] GetArmAngleList()
         {
-            var arm = m_armList.FirstOrDefault( value => value.ID == i_armID );
-            if( arm != null )
+            var list    = new List< Vector3 >( m_armList.Count );
+            foreach( var arm in m_armList )
             {
-                arm.RotateArm( i_handID, i_power * 30.0f * Time.deltaTime );
+                list.Add( arm.Angles );
+            }
+            return list.ToArray();
+        }
+
+    #endregion // Arm
+
+
+    #region Private
+
+        private void InstantiateHands( string i_tag, int i_firstID, AsuraArm i_res )
+        {
+            {
+                var list = GameObject.FindGameObjectsWithTag( i_tag );
+                var sorted  = list.OrderBy( value => -value.transform.position.y ).ToArray();
+                for( int i = 0, size = sorted.Length; i < size; ++i )
+                {
+                    var point   = sorted[ i ].transform;
+                    var obj     = GameObject.Instantiate( i_res ) as AsuraArm;
+                    obj.transform.SetParent( point, false );
+
+                    obj.ID      = i_firstID + i;
+                    obj.ActiveColorCurve    = GameSettingManager.Table.m_coreGameData.m_armData.m_activeArmCurve;
+                    obj.ActivateColorTime   = GameSettingManager.Table.m_coreGameData.m_armData.m_activeArmTime;
+                    obj.LimitAngles         = LimitArmAngles;
+                    obj.SetActiveColors( GameSettingManager.Table.m_coreGameData.m_armData.m_activeColors );
+
+                    m_armList.Add( obj );
+                }
             }
         }
 
+        
+
+        
 
         private void OnSetClearRate( int rate )
         {
             GameInformation.Instance.SetClearRate( rate );
             Debug.Log( rate );
         }
+
 
     #endregion // Private
 
@@ -398,28 +478,32 @@ namespace HimonoLib
             yield return null;
 
             {
-                var randList = new List< float >();
+                var randList = new List< Vector3 >();
                 for( int i = 0; i < m_armList.Count; ++i )
                 {
-                    randList.Add( Random.Range( -45.0f, 45.0f ) );
+                    var angles  = Vector3.zero;
+                    angles.x = Random.Range( -LimitArmAngles.x, LimitArmAngles.x );
+                    angles.y = Difficulty == EDifficulty.Hard ? Random.Range( -LimitArmAngles.y, LimitArmAngles.y ) : 0.0f;
+                    angles.z = Difficulty == EDifficulty.Hard ? Random.Range( -LimitArmAngles.z, LimitArmAngles.z ) : 0.0f;
+                    randList.Add( angles );
                 }
 
-                SetPose( randList.ToArray() );
+                SetPose( randList.ToArray(), ESetPoseOption.Target );
                 PlayDoorAnimation( OpenDoorAnimationName );
             }
             
-//             yield return new WaitForSeconds( 5.0f );
-// 
-// 
-//             PlayDoorAnimation( CloseDoorAnimationName );
-// 
-//             yield return new WaitForSeconds( 2.0f );
-// 
-// 
-//             GameInformation.Instance.SetTargetPose( m_armList.ToArray() );
-//             ResetPose();
-// 
-//             yield return new WaitForSeconds( 1.0f );
+            yield return new WaitForSeconds( 5.0f );
+
+
+            PlayDoorAnimation( CloseDoorAnimationName );
+
+            yield return new WaitForSeconds( 2.0f );
+
+
+            GameInformation.Instance.SetTargetPose( m_armList.ToArray() );
+            ResetPose();
+
+            yield return new WaitForSeconds( 1.0f );
 
             PlayDoorAnimation( OpenDoorAnimationName );
             StartGame();
@@ -427,10 +511,12 @@ namespace HimonoLib
 
         private IEnumerator GameState()
         {
-            ActivateTime        = true;
-//             m_selectL.Activate  = true;
-//             m_selectR.Activate  = true;
-
+            for( int i = 0; i < LocalPlayerCount; ++i )
+            {
+                SetActivateArm( i + 1, true, m_armList.Find( value => value.ID == DEFAULT_ARM_INDEX_R ) );
+                SetActivateArm( i + 1, false, m_armList.Find( value => value.ID == DEFAULT_ARM_INDEX_L ) );
+            }
+            ActivateTime    = true;
 
             yield return null;
 
@@ -443,11 +529,12 @@ namespace HimonoLib
 
             if( NetworkManager.Instance.IsMasterClient )
             {
-                StartCoroutine( EndGameState() );
+                SetPose( GetArmAngleList() );
+                EndGame();
             }
         }
 
-        private IEnumerator EndGameState()
+        private IEnumerator ScoreState()
         {
             PlayDoorAnimation( CloseDoorAnimationName );
 
@@ -457,7 +544,23 @@ namespace HimonoLib
             NetworkManager.Instance.SetClearRate( rate );
 
             NetworkManager.Instance.ChangeSceneAllPlayer( EScene.Result );
+
+
+
+            yield return null;
         }
+
+//         private IEnumerator EndGameState()
+//         {
+//             PlayDoorAnimation( CloseDoorAnimationName );
+// 
+//             yield return new WaitForSeconds( 2.0f );
+// 
+//             int rate = GameInformation.Instance.SetResultPose( m_armList.ToArray() );
+//             NetworkManager.Instance.SetClearRate( rate );
+// 
+//             NetworkManager.Instance.ChangeSceneAllPlayer( EScene.Result );
+//         }
 
     #endregion // State
 

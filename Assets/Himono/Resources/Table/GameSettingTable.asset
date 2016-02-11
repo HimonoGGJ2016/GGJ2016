@@ -25,9 +25,15 @@ MonoBehaviour:
   m_coreGameData:
     m_openDoorAnimation: open
     m_closeDoorAnimation: close
+    m_controlData:
+      m_enableAxis: 0.2
+      m_armPower: 150
     m_armData:
-      m_activeArmColorR: {r: 0, g: 0, b: 0, a: 1}
-      m_activeArmColorL: {r: 1, g: 1, b: 0, a: 1}
+      m_activeColors:
+      - {r: 0, g: 0, b: 1, a: 1}
+      - {r: 0, g: 1, b: 0, a: 1}
+      - {r: 1, g: 0, b: 1, a: 1}
+      - {r: 0.78431374, g: 0.78431374, b: 0, a: 1}
       m_activeArmCurve:
         serializedVersion: 2
         m_Curve:
@@ -45,6 +51,9 @@ MonoBehaviour:
         m_PostInfinity: 0
         m_RotationOrder: 0
       m_activeArmTime: 1
+      m_limitBackAngle: 45
+      m_limitCenterAngle: 30
+      m_limitFrontAngle: 30
   m_handResource: Game/Asura/Hand
   m_handPointLTag: HandPointL
   m_handPointRTag: HandPointR
