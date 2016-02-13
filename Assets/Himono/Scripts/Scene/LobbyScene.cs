@@ -155,7 +155,7 @@ namespace HimonoLib
                 }
             }
 
-            // NetworkManager.Instance.Join( OnJoined );
+            //NetworkManager.Instance.Join( OnJoined );
 
         }
 
