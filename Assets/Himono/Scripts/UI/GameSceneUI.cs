@@ -6,6 +6,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 
 namespace HimonoLib
@@ -26,6 +27,16 @@ namespace HimonoLib
         private RectTransform   m_answerParent      = null;
         [SerializeField]
         private Image           m_answerUIOrigin    = null;
+
+        [SerializeField]
+        private GameObject      m_hintCamera    = null;
+        [SerializeField]
+        private GameObject      m_hintPhoto     = null;
+
+        [SerializeField]
+        private GameObject      m_rememberUI    = null;
+        [SerializeField]
+        private GameObject      m_startUI       = null;
 
         private Image[]     m_answerUIList  = null;
 
@@ -104,6 +115,26 @@ namespace HimonoLib
             m_answerUIList  = list.ToArray();
         }
 
+        public void ShowRememberUI()
+        {
+            m_rememberUI.SetActive( true );
+        }
+
+        public void ShowStartUI()
+        {
+            m_startUI.SetActive( true );
+        }
+
+        public void SaveHint()
+        {
+            StartCoroutine( SaveHintState() );
+        }
+
+        public void ShowHint( float i_time )
+        {
+            StartCoroutine( HintFadeState( i_time ) );
+        }
+
     #endregion // Public
 
     
@@ -136,6 +167,38 @@ namespace HimonoLib
             }
 
             return null;
+        }
+
+        private IEnumerator SaveHintState()
+        {
+            if( m_hintCamera != null )
+            {
+                m_hintCamera.SetActive( true );
+            }
+
+            yield return null;
+
+            yield return new WaitForEndOfFrame();
+
+            if( m_hintCamera != null )
+            {
+                m_hintCamera.SetActive( false );
+            }
+        }
+
+        private IEnumerator HintFadeState( float i_time )
+        {
+            if( m_hintPhoto != null )
+            {
+                m_hintPhoto.SetActive( true );
+            }
+            yield return new WaitForSeconds( i_time );
+
+            if( m_hintPhoto != null )
+            {
+                m_hintPhoto.SetActive( false );
+            }
+
         }
     #endregion // Private
 

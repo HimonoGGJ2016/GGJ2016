@@ -186,6 +186,7 @@ namespace HimonoLib
             if( op == ESetPoseOption.Target )
             {
                 GameInformation.Instance.SetTargetPose( m_armList.ToArray() );
+                m_gameUI.SaveHint();
             }
         }
 
@@ -474,6 +475,8 @@ namespace HimonoLib
                 SetPose( randList.ToArray(), ESetPoseOption.Target );
                 PlayDoorAnimation( OpenDoorAnimationName );
             }
+
+            m_gameUI.ShowRememberUI();
             
             yield return new WaitForSeconds( 5.0f );
 
@@ -501,15 +504,29 @@ namespace HimonoLib
             }
 
             ActivateTime    = true;
+            m_gameUI.ShowStartUI();
 
             yield return null;
 
-            while( m_time > 0.0f )
+            float halfTime  = m_time * 0.5f;
+
+            while( m_time > halfTime )
             {
                 UpdateControl();
                 m_time  -= Time.deltaTime;
                 yield return null;
             }
+
+            m_gameUI.ShowHint( 5.0f );
+
+            while( m_time > 0.0f )
+            {
+                UpdateControl();
+                m_time -= Time.deltaTime;
+                yield return null;
+            }
+
+
 
 
             {

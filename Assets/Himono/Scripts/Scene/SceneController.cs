@@ -66,7 +66,6 @@ namespace HimonoLib
         void Start()
         {
             InitializeFade( GameObject.FindObjectOfType< FadeController >() );
-            // PlayBGM( Application.loadedLevelName );
         }
 
         void Update()
