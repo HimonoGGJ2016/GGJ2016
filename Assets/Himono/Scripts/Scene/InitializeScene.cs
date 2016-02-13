@@ -30,6 +30,9 @@ namespace HimonoLib
 
         void Start()
         {
+            GamepadInput.GamePad.AxisButtonTime     = 0.2f;
+            GamepadInput.GamePad.EnableAxisButton   = 0.7f;
+
             StartCoroutine( UpdateState() );
         }
 

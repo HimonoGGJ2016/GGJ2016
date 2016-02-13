@@ -27,7 +27,6 @@ namespace HimonoLib
         [SerializeField, EnumListLabel( typeof( EMenu ) ) ]
         private GameObject[]  m_modeUIList  = null;
 
-
     #endregion // Variable
 
 
@@ -49,8 +48,17 @@ namespace HimonoLib
         void Awake()
         {
             GameInformation.Instance.Reset();
+        }
 
+        void Start()
+        {
             SetMenuUI( EMenu.Mode );
+        }
+
+        void Update()
+        {
+            
+
         }
 
     #endregion // UnityEvent
@@ -84,6 +92,7 @@ namespace HimonoLib
         public void OnMenuMode()
         {
             SetMenuUI( EMenu.Mode );
+            
         }
 
         public void OnMenuOfflineCount()
@@ -104,6 +113,8 @@ namespace HimonoLib
                 return;
             }
 
+            StopAllCoroutines();
+
             int index   = (int)i_menu;
             for( int i = 0, size = m_modeUIList.Length; i < size; ++i )
             {
@@ -111,8 +122,14 @@ namespace HimonoLib
                 if( ui != null )
                 {
                     ui.SetActive( i == index );
+                    if( i == index )
+                    {
+                        StartCoroutine( ModeState( ui ) );
+                    }
                 }
             }
+
+
         }
 
     #endregion // Private
@@ -140,6 +157,57 @@ namespace HimonoLib
 
             // NetworkManager.Instance.Join( OnJoined );
 
+        }
+
+        private IEnumerator ModeState( GameObject i_obj )
+        {
+            yield return null;
+
+            var selectList  = i_obj.GetComponentsInChildren< Selectable >();
+
+            if( selectList.Length == 0 )
+            {
+                yield break;
+            }
+
+            
+
+            int max = selectList.Length;
+            int cur = 0;
+
+            selectList[ cur ].Select();
+
+            while( true )
+            {
+                yield return null;
+
+                if( GamepadInput.GamePad.GetButton( GamepadInput.GamePad.AxisButton.DownL, GamepadInput.GamePad.Index.One ) || GamepadInput.GamePad.GetButton( GamepadInput.GamePad.AxisButton.RightL, GamepadInput.GamePad.Index.One ) )
+                {
+                    cur++;
+                }
+                else if( GamepadInput.GamePad.GetButton( GamepadInput.GamePad.AxisButton.UpL, GamepadInput.GamePad.Index.One ) || GamepadInput.GamePad.GetButton( GamepadInput.GamePad.AxisButton.LeftL, GamepadInput.GamePad.Index.One ) )
+                {
+                    cur--;
+                }
+                else
+                {
+                    continue;
+                }
+
+                if( cur < 0 )
+                {
+                    cur = max - 1;
+                }
+
+                cur = cur % max;
+                selectList[ cur ].Select();
+
+            }
+
+
+
+
+            
         }
 
 

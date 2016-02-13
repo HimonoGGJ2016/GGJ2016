@@ -4,6 +4,7 @@
 
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace GamepadInput
 {
@@ -14,7 +15,40 @@ namespace GamepadInput
         public enum Button { A, B, Y, X, RightShoulder, LeftShoulder, RightStick, LeftStick, Back, Start }
         public enum Trigger { LeftTrigger, RightTrigger }
         public enum Axis { LeftStick, RightStick, Dpad }
+        public enum AxisButton { LeftL, RightL, UpL, DownL, LeftR, RightR, UpR, DownR }
         public enum Index { Any, One, Two, Three, Four }
+
+        public static float AxisButtonTime
+        {
+            get;
+            set;
+        }
+
+        public static float EnableAxisButton
+        {
+            get;
+            set;
+        }
+
+        private static Dictionary< int, Dictionary< AxisButton, AxisButtonData > >  m_axisButton    = new Dictionary< int, Dictionary< AxisButton, AxisButtonData > >()
+        {
+            { 1, new Dictionary<AxisButton, AxisButtonData>()   {
+                                                                { AxisButton.LeftL, new AxisButtonData() }, { AxisButton.RightL, new AxisButtonData() }, { AxisButton.UpL, new AxisButtonData() }, { AxisButton.DownL, new AxisButtonData() },
+                                                                { AxisButton.LeftR, new AxisButtonData() }, { AxisButton.RightR, new AxisButtonData() }, { AxisButton.UpR, new AxisButtonData() }, { AxisButton.DownR, new AxisButtonData() },
+                                                                } },
+            { 2, new Dictionary<AxisButton, AxisButtonData>()   {
+                                                                { AxisButton.LeftL, new AxisButtonData() }, { AxisButton.RightL, new AxisButtonData() }, { AxisButton.UpL, new AxisButtonData() }, { AxisButton.DownL, new AxisButtonData() },
+                                                                { AxisButton.LeftR, new AxisButtonData() }, { AxisButton.RightR, new AxisButtonData() }, { AxisButton.UpR, new AxisButtonData() }, { AxisButton.DownR, new AxisButtonData() },
+                                                                } },
+            { 3, new Dictionary<AxisButton, AxisButtonData>()   {
+                                                                { AxisButton.LeftL, new AxisButtonData() }, { AxisButton.RightL, new AxisButtonData() }, { AxisButton.UpL, new AxisButtonData() }, { AxisButton.DownL, new AxisButtonData() },
+                                                                { AxisButton.LeftR, new AxisButtonData() }, { AxisButton.RightR, new AxisButtonData() }, { AxisButton.UpR, new AxisButtonData() }, { AxisButton.DownR, new AxisButtonData() },
+                                                                } },
+            { 4, new Dictionary<AxisButton, AxisButtonData>()   {
+                                                                { AxisButton.LeftL, new AxisButtonData() }, { AxisButton.RightL, new AxisButtonData() }, { AxisButton.UpL, new AxisButtonData() }, { AxisButton.DownL, new AxisButtonData() },
+                                                                { AxisButton.LeftR, new AxisButtonData() }, { AxisButton.RightR, new AxisButtonData() }, { AxisButton.UpR, new AxisButtonData() }, { AxisButton.DownR, new AxisButtonData() },
+                                                                } },
+        };
 
         public static bool GetButtonDown(Button button, Index controlIndex)
         {
@@ -32,6 +66,12 @@ namespace GamepadInput
         {
             KeyCode code = GetKeycode(button, controlIndex);
             return Input.GetKey(code);
+        }
+
+        public static bool GetButton( AxisButton button, Index controlIndex )
+        {
+            var pair    = m_axisButton[ (int)controlIndex ];
+            return pair[ button ].m_trigger;
         }
 
         /// <summary>
@@ -228,6 +268,51 @@ namespace GamepadInput
             return state;
         }
 
+        public static void Update()
+        {
+            int startIndex = (int)GamepadInput.GamePad.Index.One;
+            int endIndex    = (int)GamepadInput.GamePad.Index.Four;
+            for( int i = startIndex; i <= endIndex; ++i )
+            {
+                m_axisButton[ i ][ AxisButton.LeftL ].m_down     = GetAxis( Axis.LeftStick, (Index)i ).x < -EnableAxisButton;
+                m_axisButton[ i ][ AxisButton.RightL ].m_down    = GetAxis( Axis.LeftStick, (Index)i ).x >  EnableAxisButton;
+                m_axisButton[ i ][ AxisButton.UpL ].m_down       = GetAxis( Axis.LeftStick, (Index)i ).y >  EnableAxisButton;
+                m_axisButton[ i ][ AxisButton.DownL ].m_down     = GetAxis( Axis.LeftStick, (Index)i ).y < -EnableAxisButton;
+                m_axisButton[ i ][ AxisButton.LeftR ].m_down     = GetAxis( Axis.RightStick, (Index)i ).x < -EnableAxisButton;
+                m_axisButton[ i ][ AxisButton.RightR ].m_down    = GetAxis( Axis.RightStick, (Index)i ).x >  EnableAxisButton;
+                m_axisButton[ i ][ AxisButton.UpR ].m_down       = GetAxis( Axis.RightStick, (Index)i ).y >  EnableAxisButton;
+                m_axisButton[ i ][ AxisButton.DownR ].m_down     = GetAxis( Axis.RightStick, (Index)i ).y < -EnableAxisButton;
+            }
+
+            foreach( var player in m_axisButton )
+            {
+                foreach( var button in player.Value )
+                {
+                    button.Value.m_trigger  = button.Value.m_down && button.Value.m_triggerTime <= Mathf.Epsilon;
+
+                    if( button.Value.m_down )
+                    {
+                        button.Value.m_triggerTime += Time.deltaTime;
+                    }
+                    if( !button.Value.m_down || button.Value.m_triggerTime >= AxisButtonTime )
+                    {
+                        button.Value.m_triggerTime = 0.0f;
+                    }
+
+                    // Debug.LogFormat( "{0}, {1}, {2}", player.Key, button.Key, button.Value.m_trigger );
+                    
+                }
+
+            }
+        }
+
+
+        private class AxisButtonData
+        {
+            public bool     m_down          = false;
+            public bool     m_trigger       = false;
+            public float    m_triggerTime   = 0.0f;
+        }
     }
 
     public class GamepadState

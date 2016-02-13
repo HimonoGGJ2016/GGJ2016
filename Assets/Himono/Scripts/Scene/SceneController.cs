@@ -69,6 +69,11 @@ namespace HimonoLib
             // PlayBGM( Application.loadedLevelName );
         }
 
+        void Update()
+        {
+            GamepadInput.GamePad.Update();
+        }
+
     #endregion // UnityEvent
 
     

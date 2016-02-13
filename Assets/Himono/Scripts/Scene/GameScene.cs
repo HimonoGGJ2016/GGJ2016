@@ -294,16 +294,28 @@ namespace HimonoLib
             {
                 var index   = ( GamepadInput.GamePad.Index )i;
 
-                if( GamepadInput.GamePad.GetButtonDown( GamepadInput.GamePad.Button.LeftShoulder, index ) )
+                if( GamepadInput.GamePad.GetButton( GamepadInput.GamePad.AxisButton.UpL, index ) )
                 {
                     var arm     = GetActivateArm( i, false );
-                    var next    = NextArm( arm.ID, DEFAULT_ARM_INDEX_L, 1 );
+                    var next    = NextArm( arm.ID, DEFAULT_ARM_INDEX_L, -1 );
                     SetActivateArm( i, false, next );
                 }
-                if( GamepadInput.GamePad.GetButtonDown( GamepadInput.GamePad.Button.RightShoulder, index ) )
+                if( GamepadInput.GamePad.GetButton( GamepadInput.GamePad.AxisButton.DownL, index ) )
+                {
+                    var arm = GetActivateArm( i, false );
+                    var next = NextArm( arm.ID, DEFAULT_ARM_INDEX_L, 1 );
+                    SetActivateArm( i, false, next );
+                }
+                if( GamepadInput.GamePad.GetButton( GamepadInput.GamePad.AxisButton.UpR, index ) )
                 {
                     var arm     = GetActivateArm( i, true );
-                    var next    = NextArm( arm.ID, DEFAULT_ARM_INDEX_R, 1 );
+                    var next    = NextArm( arm.ID, DEFAULT_ARM_INDEX_R, -1 );
+                    SetActivateArm( i, true, next );
+                }
+                if( GamepadInput.GamePad.GetButton( GamepadInput.GamePad.AxisButton.DownR, index ) )
+                {
+                    var arm = GetActivateArm( i, true );
+                    var next = NextArm( arm.ID, DEFAULT_ARM_INDEX_R, 1 );
                     SetActivateArm( i, true, next );
                 }
             }
