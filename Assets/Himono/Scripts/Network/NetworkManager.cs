@@ -19,14 +19,6 @@ namespace HimonoLib
     #endregion // Variable
 
 
-    #region Event
-
-        public event System.Action< AsuraArm[] >    OnCollectArm        = (armList) => {};
-        public event System.Action< int >        OnClearRate        = (rate) =>{};
-
-    #endregion // Event
-
-
     #region Property
 
         public static NetworkManager Instance
@@ -93,16 +85,15 @@ namespace HimonoLib
             }
         }
 
-        #endregion // Property
+    #endregion // Property
 
 
     #region Public
 
         public void Reset()
         {
-            OnCollectArm = ( armList ) => {};
-            OnClearRate = ( rate ) => {};
-    }
+
+        }
 
         public void Connect()
         {
@@ -141,37 +132,7 @@ namespace HimonoLib
             ChangeScene( (EScene)i_scene );
         }
 
-
-        public void CollectArm()
-        {
-            if( Connected )
-            {
-                photonView.RPC( "CollectArmRPC", PhotonTargets.All );
-            }
-            
-        }
-        [PunRPC]
-        private void CollectArmRPC()
-        {
-            OnCollectArm( GameObject.FindObjectsOfType< AsuraArm >() );
-        }
-
-
-        public void SetClearRate( int i_rate )
-        {
-            if( Connected )
-            {
-                photonView.RPC( "SetClearRateRPC", PhotonTargets.All, i_rate );
-            }
-        }
-        [PunRPC]
-        private void SetClearRateRPC( int i_rate )
-        {
-            OnClearRate( i_rate );
-        }
-
-
-        #endregion // Public
+    #endregion // Public
 
 
     #region UnityEvent
@@ -191,6 +152,8 @@ namespace HimonoLib
             {
                 photonView.viewID   = 1;
             }
+
+            OfflineMode = true;
         }
 
         void Start()

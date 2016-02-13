@@ -26,6 +26,13 @@ namespace HimonoLib
         Normal,
         Hard,
     }
+
+    public enum EAnswer
+    {
+        Answer,
+        Hot,
+        Error,
+    }
         
 } // namespace HimonoLib
 

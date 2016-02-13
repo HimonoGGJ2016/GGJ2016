@@ -62,15 +62,6 @@ namespace HimonoLib
         {
             NetworkManager.Instance.Diconnect();
 
-            yield return new WaitForSeconds( 0.5f );
-
-            NetworkManager.Instance.Connect();
-
-            while( !NetworkManager.Instance.Connected )
-            {
-                yield return null;
-            }
-
             yield return new WaitForSeconds( 5.0f );
 
             NetworkManager.Instance.ChangeScene( EScene.Title );

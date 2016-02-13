@@ -13,15 +13,11 @@ namespace HimonoLib
 
     #region Variable
 
-        private int         m_localPlayerCount  = 0;
+        private int         m_localPlayerCount  = 1;
         private EDifficulty m_difficulty        = default( EDifficulty );
 
-
-
         private List< PoseData >    m_targetPoseList    = new List<PoseData>();
-        private int m_clearRate = 0;
-
-
+        private List< EAnswer >     m_answerList        = new List<EAnswer>();
 
     #endregion // Variable
 
@@ -52,24 +48,52 @@ namespace HimonoLib
             }
         }
 
+        public float AnswerAngle
+        {
+            get
+            {
+                return GameSettingManager.Table.m_coreGameData.m_scoreData.m_answerAngle;
+            }
+        }
 
-
-
-
+        public float HotAngle
+        {
+            get
+            {
+                return GameSettingManager.Table.m_coreGameData.m_scoreData.m_hotAngle;
+            }
+        }
 
         public int ClearRate
         {
             get
             {
-                return m_clearRate;
-            }
-        }
+                if( m_answerList.Count == 0 )
+                {
+                    return 0;
+                }
 
-        public float ClearAngle
-        {
-            get
-            {
-                return 10.0f;
+                float   score   = 100.0f;
+                var     single  = 100.0f / m_answerList.Count;
+                foreach( var answer in m_answerList )
+                {
+                    switch( answer )
+                    {
+                        case EAnswer.Hot:
+                            score   -= single * 0.5f;
+                            break;
+
+                        case EAnswer.Error:
+                            score   -= single;
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+
+
+                return Mathf.CeilToInt( score );
             }
         }
 
@@ -84,8 +108,7 @@ namespace HimonoLib
             m_difficulty        = default( EDifficulty );
 
             m_targetPoseList.Clear();
-            m_clearRate = 0;
-
+            m_answerList.Clear();
         }
 
         public void SetTargetPose( AsuraArm[ ] i_armList )
@@ -96,49 +119,29 @@ namespace HimonoLib
             }
         }
 
-        public int SetResultPose( AsuraArm[ ] i_armList )
+        public EAnswer IsAnswerPose( AsuraArm i_arm )
         {
-            int clearCount  = 0;
-            foreach( var arm in i_armList )
+            var target          = m_targetPoseList.Find( value => value.m_id == i_arm.ID );
+            float curAngle      = i_arm.Angles.x;
+            float targetAngle   = target.m_angles.x;
+            float angle         = Mathf.Abs( curAngle - targetAngle );
+            if( angle <= AnswerAngle )
             {
-                var pose    = m_targetPoseList.Find( value => value.m_id == arm.ID );
-
-//                 {
-//                     float angle = arm.FrontAngle - pose.m_front;
-//                     if( Mathf.Abs( angle ) <= ClearAngle )
-//                     {
-//                         clearCount++;
-//                     }
-//                 }
-// 
-//                 {
-//                     float angle = arm.CenterAngle - pose.m_center;
-//                     if( Mathf.Abs( angle ) <= ClearAngle )
-//                     {
-//                         clearCount++;
-//                     }
-//                 }
-// 
-                {
-                    float angle = arm.Angles.x - pose.m_angles.x;
-                    if( Mathf.Abs( angle ) <= ClearAngle )
-                    {
-                        clearCount++;
-                    }
-                }
+                return EAnswer.Answer;
             }
-
-            int max = i_armList.Length;
-            int rate = clearCount >= max ? 100 : Mathf.CeilToInt( Mathf.Clamp01( (float)clearCount / (float)max ) * 100.0f );
-            return rate;
+            if( angle <= HotAngle )
+            {
+                return EAnswer.Hot;
+            }
+            return EAnswer.Error;
         }
 
-        public void SetClearRate( int i_rate )
+        public void AddAnswerResult( EAnswer i_answer )
         {
-            m_clearRate = i_rate;
+            m_answerList.Add( i_answer );
         }
 
-        #endregion // Public
+    #endregion // Public
 
 
     #region UnityEvent

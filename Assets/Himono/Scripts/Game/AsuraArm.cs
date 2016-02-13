@@ -21,16 +21,19 @@ namespace HimonoLib
         [SerializeField]
         private GameObject  m_armBack   = null;
 
-        private int     m_id        = 0;
-        private Color   m_nextColor = Color.white;
+        [SerializeField]
+        private Transform   m_armFrontTrnsform  = null;
+        [SerializeField]
+        private Transform   m_armCenterTrnsform  = null;
+        [SerializeField]
+        private Transform   m_armBackTrnsform  = null;
 
+        private int     m_id        = 0;
 
         private List< int > m_activePlayerList  = new List< int >();
         private Dictionary< int, Color >            m_activeColorList           = new Dictionary< int, Color >();
         private Dictionary< SpriteRenderer, int >   m_spriteDefaultOrderList    = new Dictionary<SpriteRenderer, int>();
 
-
-        private bool m_activate = false;
         private SpriteRenderer[]    m_spriteList    = null;
 
         private const int   ACTIVE_SORT_ORDER   = 50;
@@ -61,6 +64,18 @@ namespace HimonoLib
                 angles.y    = CenterAngle;
                 angles.z    = FrontAngle;
                 return angles;
+            }
+        }
+
+        public Vector3[] Positions
+        {
+            get
+            {
+                var posList = new Vector3[ 3 ];
+                posList[ 0 ]    = m_armFrontTrnsform != null ? m_armFrontTrnsform.position : Vector3.zero;
+                posList[ 1 ]    = m_armCenterTrnsform != null ? m_armCenterTrnsform.position : Vector3.zero;
+                posList[ 2 ]    = m_armBackTrnsform != null ? m_armBackTrnsform.position : Vector3.zero;
+                return posList;
             }
         }
 

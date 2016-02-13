@@ -149,7 +149,9 @@ namespace HimonoLib
         [SerializeField]
         public ControlData  m_controlData;
         [SerializeField]
-        public ArmData  m_armData;
+        public ArmData      m_armData;
+        [SerializeField]
+        public ScoreData    m_scoreData;
     }
 
     [System.Serializable]
@@ -177,6 +179,22 @@ namespace HimonoLib
         [SerializeField]
         public float    m_armPower;
     }
+
+    [System.Serializable]
+    public struct ScoreData
+    {
+        [SerializeField, Range( 0.0f, 180.0f )]
+        public float    m_answerAngle;
+        [SerializeField, Range( 0.0f, 180.0f )]
+        public float    m_hotAngle;
+        [SerializeField]
+        public Sprite   m_answerSprite;
+        [SerializeField]
+        public Sprite   m_hotSprite;
+        [SerializeField]
+        public Sprite   m_errorSprite;
+    }
+
 
     [System.Serializable]
     public struct ResultData

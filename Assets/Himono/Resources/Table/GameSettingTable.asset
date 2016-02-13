@@ -54,6 +54,12 @@ MonoBehaviour:
       m_limitBackAngle: 45
       m_limitCenterAngle: 30
       m_limitFrontAngle: 30
+    m_scoreData:
+      m_answerAngle: 10
+      m_hotAngle: 15
+      m_answerSprite: {fileID: 21300000, guid: 097444597f4eb774bb0f2f5842cce61a, type: 3}
+      m_hotSprite: {fileID: 21300000, guid: f37c98f93d533e3439f90faef1658cfe, type: 3}
+      m_errorSprite: {fileID: 21300000, guid: 3a2fe77e74e59d24ab9a79b981e50754, type: 3}
   m_handResource: Game/Asura/Hand
   m_handPointLTag: HandPointL
   m_handPointRTag: HandPointR

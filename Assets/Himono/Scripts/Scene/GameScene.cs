@@ -24,11 +24,7 @@ namespace HimonoLib
         }
 
         [SerializeField]
-        private GameObject  m_timePanel = null;
-        [SerializeField]
-        private Text    m_timeText  = null;
-        [SerializeField]
-        private Animator    m_doorAnimator  = null;
+        private GameSceneUI m_gameUI    = null;
 
         private float   m_time  = 0.0f;
 
@@ -49,12 +45,7 @@ namespace HimonoLib
         {
             set
             {
-                if( m_timePanel == null )
-                {
-                    return;
-                }
-
-                m_timePanel.SetActive( value );
+                m_gameUI.ActivateTime   = value;
             }
         }
 
@@ -62,13 +53,7 @@ namespace HimonoLib
         {
             set
             {
-                if( m_timeText == null )
-                {
-                    return;
-                }
-
-                value   = Mathf.Max( 0.0f, value );
-                m_timeText.text = value.ToString( "F2" );
+                m_gameUI.TimeText   = value;
             }
         }
 
@@ -138,8 +123,6 @@ namespace HimonoLib
 
         void Awake()
         {
-            NetworkManager.Instance.OnClearRate += OnSetClearRate;
-
             m_time      = GameSettingManager.Table.m_gameTime;
             ActivateTime = false;
 
@@ -147,8 +130,6 @@ namespace HimonoLib
 
             InstantiateHands( HandPointLeftTag,     DEFAULT_ARM_INDEX_L,    GameSettingManager.Instance.GetArm( EArmType.LeftA ) );
             InstantiateHands( HandPointRightTag,    DEFAULT_ARM_INDEX_R,    GameSettingManager.Instance.GetArm( EArmType.RightA ) );
-
-            NetworkManager.Instance.ActivateUI  = false;
         }
 
         void Start()
@@ -158,6 +139,7 @@ namespace HimonoLib
                 m_selectArmsR.Add( i + 1, null );
                 m_selectArmsL.Add( i + 1, null );
             }
+            m_gameUI.InstantiateAnswerUI( m_armList.Count );
 
             if( NetworkManager.Instance.IsMasterClient )
             {
@@ -290,7 +272,7 @@ namespace HimonoLib
         [PunRPC]
         private void PlayDoorAnimationRPC( string i_anime )
         {
-            m_doorAnimator.Play( i_anime );
+            m_gameUI.PlayDoorAnimation( i_anime );
         }
 
     #endregion // Network
@@ -446,17 +428,6 @@ namespace HimonoLib
             }
         }
 
-        
-
-        
-
-        private void OnSetClearRate( int rate )
-        {
-            GameInformation.Instance.SetClearRate( rate );
-            Debug.Log( rate );
-        }
-
-
     #endregion // Private
 
 
@@ -516,6 +487,7 @@ namespace HimonoLib
                 SetActivateArm( i + 1, true, m_armList.Find( value => value.ID == DEFAULT_ARM_INDEX_R ) );
                 SetActivateArm( i + 1, false, m_armList.Find( value => value.ID == DEFAULT_ARM_INDEX_L ) );
             }
+
             ActivateTime    = true;
 
             yield return null;
@@ -527,6 +499,19 @@ namespace HimonoLib
                 yield return null;
             }
 
+
+            {
+                int startIndex = (int)GamepadInput.GamePad.Index.One;
+                for( int i = startIndex; i < startIndex + GameInformation.Instance.LocalPlayerCount; ++i )
+                {
+                    var armL = GetActivateArm( i, false );
+                    armL.Activate( false, i );
+
+                    var armR = GetActivateArm( i, true );
+                    armR.Activate( false, i );
+                }
+            }
+
             if( NetworkManager.Instance.IsMasterClient )
             {
                 SetPose( GetArmAngleList() );
@@ -536,12 +521,25 @@ namespace HimonoLib
 
         private IEnumerator ScoreState()
         {
-            PlayDoorAnimation( CloseDoorAnimationName );
+            yield return new WaitForSeconds( 1.0f );
+
+            foreach( var arm in m_armList )
+            {
+                var result = GameInformation.Instance.IsAnswerPose( arm );
+                GameInformation.Instance.AddAnswerResult( result );
+                m_gameUI.ShowAnswer( result, arm.Positions[ 0 ] );
+                yield return new WaitForSeconds( 0.25f );
+            }
+
+
+
 
             yield return new WaitForSeconds( 2.0f );
 
-            int rate = GameInformation.Instance.SetResultPose( m_armList.ToArray() );
-            NetworkManager.Instance.SetClearRate( rate );
+
+            PlayDoorAnimation( CloseDoorAnimationName );
+
+            yield return new WaitForSeconds( 2.0f );
 
             NetworkManager.Instance.ChangeSceneAllPlayer( EScene.Result );
 
@@ -563,12 +561,6 @@ namespace HimonoLib
 //         }
 
     #endregion // State
-
-
-
-
-
-
 
 
     } // class GameScene
