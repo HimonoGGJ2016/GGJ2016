@@ -8,6 +8,10 @@ using System.Collections;
 
 namespace HimonoLib
 {
+    public delegate void OnCreatRoomCallback( bool i_result );
+    public delegate void OnEnterRoomCallback( bool i_result );
+
+
     public class NetworkManager : Photon.PunBehaviour
     {
     
@@ -110,6 +114,27 @@ namespace HimonoLib
         {
             StartCoroutine( JoinCoroutine( i_callback ) );
         }
+
+        public void CreateRoom( string i_name, OnCreatRoomCallback i_callback  )
+        {
+            if( !PhotonNetwork.insideLobby )
+            {
+                return;
+            }
+
+            StartCoroutine( CreateRoomCoroutine( i_name, i_callback ) );
+        }
+
+        public void EnterRoom( string i_name, OnEnterRoomCallback i_callback )
+        {
+            if( !PhotonNetwork.insideLobby )
+            {
+                return;
+            }
+
+            StartCoroutine( EnterRoomCoroutine( i_name, i_callback ) );
+        }
+
 
         public void ChangeSceneAllPlayer( EScene i_scene )
         {
@@ -236,18 +261,51 @@ namespace HimonoLib
                 yield return null;
             }
 
-            PhotonNetwork.JoinRandomRoom();
+            if( i_callback != null )
+            {
+                i_callback();
+            }
+        }
+
+        private IEnumerator CreateRoomCoroutine( string i_roomName, OnCreatRoomCallback i_callback )
+        {
+            bool ret = PhotonNetwork.CreateRoom( i_roomName );
+
+            if( !ret )
+            {
+                i_callback( false );
+                yield break;
+            }
 
             if( !PhotonNetwork.inRoom )
             {
                 yield return null;
             }
 
-            yield return new WaitForSeconds( 2.0f );
+            if( i_callback != null )
+            {
+                i_callback( true );
+            }
+        }
+
+        private IEnumerator EnterRoomCoroutine( string i_roomName, OnEnterRoomCallback i_callback )
+        {
+            bool ret = PhotonNetwork.JoinRoom( i_roomName );
+
+            if( !ret )
+            {
+                i_callback( false );
+                yield break;
+            }
+
+            if( !PhotonNetwork.inRoom )
+            {
+                yield break;
+            }
 
             if( i_callback != null )
             {
-                i_callback();
+                i_callback( true );
             }
         }
 

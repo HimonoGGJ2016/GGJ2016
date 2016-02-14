@@ -32,15 +32,32 @@ namespace HimonoLib
 
     #region Property
 
+        private string RoomName
+        {
+            get
+            {
+                return null;
+            }
+            set
+            {
+
+            }
+        }
+
+        private int RoomMemberCount
+        {
+            get
+            {
+                return 0;
+            }
+            set
+            {
+
+            }
+        }
+
 
     #endregion // Property
-
-    
-    #region Public
-
-
-
-    #endregion // Public
 
 
     #region UnityEvent
@@ -76,6 +93,7 @@ namespace HimonoLib
         {
             NetworkManager.Instance.OfflineMode = false;
             GameInformation.Instance.LocalPlayerCount   = 1;
+
         }
 
         public void OnSetOfflineCount( int i_count )
@@ -86,6 +104,27 @@ namespace HimonoLib
             {
                 PhotonNetwork.room.open = false;
             }
+        }
+
+        public void OnCreateRoom( string i_roomName )
+        {
+            NetworkManager.Instance.CreateRoom( i_roomName, ( result ) =>
+            {
+
+            } );
+        }
+
+        public void OnEnterRoom( string i_roomName )
+        {
+            NetworkManager.Instance.EnterRoom( i_roomName, ( result ) =>
+            {
+
+            } );
+        }
+
+        public void OnStartOnlineGame()
+        {
+
         }
 
 
