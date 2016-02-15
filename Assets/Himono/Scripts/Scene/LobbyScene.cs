@@ -22,40 +22,29 @@ namespace HimonoLib
             Mode,
             OfflineCount,
             OnlineLogin,
+            OnlineRoom,
         }
 
         [SerializeField, EnumListLabel( typeof( EMenu ) ) ]
         private GameObject[]  m_modeUIList  = null;
+        [SerializeField]
+        private Text    m_onlineCountText   = null;
 
     #endregion // Variable
 
 
     #region Property
 
-        private string RoomName
-        {
-            get
-            {
-                return null;
-            }
-            set
-            {
-
-            }
-        }
-
         private int RoomMemberCount
         {
-            get
-            {
-                return 0;
-            }
             set
             {
-
+                if( m_onlineCountText != null )
+                {
+                    m_onlineCountText.text  = value.ToString();
+                }
             }
         }
-
 
     #endregion // Property
 
@@ -74,8 +63,7 @@ namespace HimonoLib
 
         void Update()
         {
-            
-
+            RoomMemberCount = NetworkManager.Instance.RoomPlayerCount;
         }
 
     #endregion // UnityEvent
@@ -93,7 +81,7 @@ namespace HimonoLib
         {
             NetworkManager.Instance.OfflineMode = false;
             GameInformation.Instance.LocalPlayerCount   = 1;
-
+            SetMenuUI( EMenu.OnlineLogin );
         }
 
         public void OnSetOfflineCount( int i_count )
@@ -106,20 +94,16 @@ namespace HimonoLib
             }
         }
 
-        public void OnCreateRoom( string i_roomName )
+        public void OnCreateRoom()
         {
-            NetworkManager.Instance.CreateRoom( i_roomName, ( result ) =>
-            {
-
-            } );
+            SetMenuUI( EMenu.Wait );
+            StartCoroutine( CreateRoomState() );
         }
 
         public void OnEnterRoom( string i_roomName )
         {
-            NetworkManager.Instance.EnterRoom( i_roomName, ( result ) =>
-            {
-
-            } );
+            SetMenuUI( EMenu.Wait );
+            StartCoroutine( EnterRoomState() );
         }
 
         public void OnStartOnlineGame()
@@ -131,7 +115,6 @@ namespace HimonoLib
         public void OnMenuMode()
         {
             SetMenuUI( EMenu.Mode );
-            
         }
 
         public void OnMenuOfflineCount()
@@ -168,35 +151,26 @@ namespace HimonoLib
                 }
             }
 
+            OnChangedMenu( i_menu );
+        }
 
+        private void OnChangedMenu( EMenu i_menu )
+        {
+            switch( i_menu )
+            {
+                case EMenu.Mode:
+                    NetworkManager.Instance.Diconnect();
+                    break;
+
+                default:
+                    break;
+            }
         }
 
     #endregion // Private
 
 
     #region State
-
-        private IEnumerator OnlineConnectState()
-        {
-
-            if( NetworkManager.Instance == null )
-            {
-                OnMenuMode();
-                yield break;
-            }
-
-            if( !NetworkManager.Instance.Connected )
-            {
-                NetworkManager.Instance.Connect();
-                while( !NetworkManager.Instance.Connected )
-                {
-                    yield return null;
-                }
-            }
-
-            //NetworkManager.Instance.Join( OnJoined );
-
-        }
 
         private IEnumerator ModeState( GameObject i_obj )
         {
@@ -240,16 +214,54 @@ namespace HimonoLib
 
                 cur = cur % max;
                 selectList[ cur ].Select();
-
             }
-
-
-
-
-            
         }
 
+        private IEnumerator CreateRoomState()
+        {
+            NetworkManager.Instance.Connect();
+            while( !NetworkManager.Instance.Connected )
+            {
+                yield return null;
+            }
 
+            NetworkManager.Instance.JoinLobby();
+            while( !NetworkManager.Instance.InsideLobby )
+            {
+                yield return null;
+            }
+
+            NetworkManager.Instance.CreateRoom();
+            while( !NetworkManager.Instance.InRoom )
+            {
+                yield return null;
+            }
+
+            SetMenuUI( EMenu.OnlineRoom );
+        }
+
+        private IEnumerator EnterRoomState()
+        {
+            NetworkManager.Instance.Connect();
+            while( !NetworkManager.Instance.Connected )
+            {
+                yield return null;
+            }
+
+            NetworkManager.Instance.JoinLobby();
+            while( !NetworkManager.Instance.InsideLobby )
+            {
+                yield return null;
+            }
+
+            NetworkManager.Instance.JoinRoom();
+            while( !NetworkManager.Instance.InRoom )
+            {
+                yield return null;
+            }
+
+            SetMenuUI( EMenu.OnlineRoom );
+        }
 
     #endregion // State
 

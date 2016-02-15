@@ -59,6 +59,23 @@ namespace HimonoLib
             }
         }
 
+        public bool InsideLobby
+        {
+            get
+            {
+                return PhotonNetwork.insideLobby;
+            }
+        }
+
+        public bool InRoom
+        {
+            get
+            {
+                return PhotonNetwork.inRoom;
+            }
+        }
+
+
 
 
 
@@ -75,6 +92,14 @@ namespace HimonoLib
             get
             {
                 return PhotonNetwork.inRoom ? PhotonNetwork.room.name : "";
+            }
+        }
+
+        public int RoomPlayerCount
+        {
+            get
+            {
+                return PhotonNetwork.inRoom ? PhotonNetwork.room.playerCount : 0;
             }
         }
 
@@ -110,12 +135,12 @@ namespace HimonoLib
             Reset();
         }
 
-        public void Join( System.Action i_callback )
+        public void JoinLobby( System.Action i_callback = null )
         {
             StartCoroutine( JoinCoroutine( i_callback ) );
         }
 
-        public void CreateRoom( string i_name, OnCreatRoomCallback i_callback  )
+        public void CreateRoom( string i_name = null, OnCreatRoomCallback i_callback = null )
         {
             if( !PhotonNetwork.insideLobby )
             {
@@ -125,7 +150,7 @@ namespace HimonoLib
             StartCoroutine( CreateRoomCoroutine( i_name, i_callback ) );
         }
 
-        public void EnterRoom( string i_name, OnEnterRoomCallback i_callback )
+        public void JoinRoom( string i_name = null, OnEnterRoomCallback i_callback = null )
         {
             if( !PhotonNetwork.insideLobby )
             {
@@ -260,6 +285,8 @@ namespace HimonoLib
             {
                 yield return null;
             }
+
+            bool ret = PhotonNetwork.JoinLobby();
 
             if( i_callback != null )
             {
