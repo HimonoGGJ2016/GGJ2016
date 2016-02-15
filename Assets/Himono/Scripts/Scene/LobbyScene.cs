@@ -29,6 +29,8 @@ namespace HimonoLib
         private GameObject[]  m_modeUIList  = null;
         [SerializeField]
         private Text    m_onlineCountText   = null;
+        [SerializeField]
+        private Text    m_roomNameText      = null;
 
     #endregion // Variable
 
@@ -42,6 +44,17 @@ namespace HimonoLib
                 if( m_onlineCountText != null )
                 {
                     m_onlineCountText.text  = value.ToString();
+                }
+            }
+        }
+
+        private string RoomName
+        {
+            set
+            {
+                if( m_roomNameText != null )
+                {
+                    m_roomNameText.text     = value.ToString();
                 }
             }
         }
@@ -63,6 +76,7 @@ namespace HimonoLib
 
         void Update()
         {
+            RoomName        = NetworkManager.Instance.RoomName;
             RoomMemberCount = NetworkManager.Instance.RoomPlayerCount;
         }
 
@@ -87,11 +101,6 @@ namespace HimonoLib
         public void OnSetOfflineCount( int i_count )
         {
             GameInformation.Instance.LocalPlayerCount   = i_count;
-            NetworkManager.Instance.ChangeSceneAllPlayer( EScene.Game );
-            if( NetworkManager.Instance.IsMasterClient && PhotonNetwork.room != null )
-            {
-                PhotonNetwork.room.open = false;
-            }
         }
 
         public void OnCreateRoom()
@@ -108,7 +117,11 @@ namespace HimonoLib
 
         public void OnStartOnlineGame()
         {
-
+            NetworkManager.Instance.ChangeSceneAllPlayer( EScene.Game );
+            if( NetworkManager.Instance.IsMasterClient && PhotonNetwork.room != null )
+            {
+                PhotonNetwork.room.open = false;
+            }
         }
 
 
@@ -127,6 +140,11 @@ namespace HimonoLib
 
     
     #region Private
+
+        private void StartGame()
+        {
+
+        }
 
         private void SetMenuUI( EMenu i_menu )
         {

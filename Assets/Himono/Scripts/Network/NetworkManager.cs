@@ -8,6 +8,7 @@ using System.Collections;
 
 namespace HimonoLib
 {
+    public delegate void OnJoinLobby( bool i_result );
     public delegate void OnCreatRoomCallback( bool i_result );
     public delegate void OnEnterRoomCallback( bool i_result );
 
@@ -121,7 +122,7 @@ namespace HimonoLib
 
         public void Reset()
         {
-
+            StopAllCoroutines();
         }
 
         public void Connect()
@@ -135,9 +136,9 @@ namespace HimonoLib
             Reset();
         }
 
-        public void JoinLobby( System.Action i_callback = null )
+        public void JoinLobby( string i_name = null, OnJoinLobby i_callback = null )
         {
-            StartCoroutine( JoinCoroutine( i_callback ) );
+            StartCoroutine( JoinLobbyCoroutine( i_callback ) );
         }
 
         public void CreateRoom( string i_name = null, OnCreatRoomCallback i_callback = null )
@@ -279,7 +280,7 @@ namespace HimonoLib
             m_networkUI.Room    = RoomName;
         }
 
-        private IEnumerator JoinCoroutine( System.Action i_callback )
+        private IEnumerator JoinLobbyCoroutine( OnJoinLobby i_callback )
         {
             if( !Connected )
             {
@@ -288,9 +289,14 @@ namespace HimonoLib
 
             bool ret = PhotonNetwork.JoinLobby();
 
+            while( !InsideLobby )
+            {
+                yield return null;
+            }
+
             if( i_callback != null )
             {
-                i_callback();
+                i_callback( ret );
             }
         }
 
@@ -304,7 +310,7 @@ namespace HimonoLib
                 yield break;
             }
 
-            if( !PhotonNetwork.inRoom )
+            while( !InRoom )
             {
                 yield return null;
             }
@@ -317,7 +323,15 @@ namespace HimonoLib
 
         private IEnumerator EnterRoomCoroutine( string i_roomName, OnEnterRoomCallback i_callback )
         {
-            bool ret = PhotonNetwork.JoinRoom( i_roomName );
+            bool ret = false;
+            if( string.IsNullOrEmpty( i_roomName ) )
+            {
+                ret = PhotonNetwork.JoinRandomRoom();
+            }
+            else
+            {
+                ret = PhotonNetwork.JoinRoom( i_roomName );
+            }
 
             if( !ret )
             {
