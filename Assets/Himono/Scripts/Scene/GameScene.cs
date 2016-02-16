@@ -449,6 +449,7 @@ namespace HimonoLib
         private IEnumerator ReadyState()
         {
             yield return new WaitForSeconds( 1.0f );
+            m_gameUI.ShowRememberUI();
         }
 
         private IEnumerator WaitPlayerState()

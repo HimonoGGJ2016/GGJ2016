@@ -32,6 +32,10 @@ namespace HimonoLib
         [SerializeField]
         private Text    m_roomNameText      = null;
 
+        private EMenu   m_currentMenu   = default( EMenu );
+
+        private const string    ASURA_LOBBY = "AsuraLobby";
+
     #endregion // Variable
 
 
@@ -76,8 +80,11 @@ namespace HimonoLib
 
         void Update()
         {
-            RoomName        = NetworkManager.Instance.RoomName;
-            RoomMemberCount = NetworkManager.Instance.RoomPlayerCount;
+            if( m_currentMenu == EMenu.OnlineRoom )
+            {
+                RoomName        = NetworkManager.Instance.RoomName;
+                RoomMemberCount = NetworkManager.Instance.RoomPlayerCount;
+            }
         }
 
     #endregion // UnityEvent
@@ -174,6 +181,7 @@ namespace HimonoLib
 
         private void OnChangedMenu( EMenu i_menu )
         {
+            m_currentMenu   = i_menu;
             switch( i_menu )
             {
                 case EMenu.Mode:
@@ -243,7 +251,7 @@ namespace HimonoLib
                 yield return null;
             }
 
-            NetworkManager.Instance.JoinLobby();
+            NetworkManager.Instance.JoinLobby( ASURA_LOBBY );
             while( !NetworkManager.Instance.InsideLobby )
             {
                 yield return null;
@@ -266,7 +274,7 @@ namespace HimonoLib
                 yield return null;
             }
 
-            NetworkManager.Instance.JoinLobby();
+            NetworkManager.Instance.JoinLobby( ASURA_LOBBY );
             while( !NetworkManager.Instance.InsideLobby )
             {
                 yield return null;

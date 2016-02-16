@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------
 using UnityEngine;
 using System.Collections;
+using System.Linq;
 
 namespace HimonoLib
 {
@@ -138,7 +139,7 @@ namespace HimonoLib
 
         public void JoinLobby( string i_name = null, OnJoinLobby i_callback = null )
         {
-            StartCoroutine( JoinLobbyCoroutine( i_callback ) );
+            StartCoroutine( JoinLobbyCoroutine( i_name, i_callback ) );
         }
 
         public void CreateRoom( string i_name = null, OnCreatRoomCallback i_callback = null )
@@ -205,6 +206,7 @@ namespace HimonoLib
             }
 
             OfflineMode = true;
+            PhotonNetwork.autoJoinLobby = false;
         }
 
         void Start()
@@ -225,36 +227,19 @@ namespace HimonoLib
 
         public override void OnConnectedToMaster()
         {
-            // Debug.Log( "OnConnectedToMaster" );
+            Debug.Log( "OnConnectedToMaster" );
         }
 
         public override void OnJoinedLobby()
         {
-            // Debug.Log( "OnJoinedLobby" );
+            Debug.Log( "OnJoinedLobby" );
             // PhotonNetwork.JoinRandomRoom();
-
-            var roomList = PhotonNetwork.GetRoomList();
-            if( roomList.Length <= 0 )
-            {
-                PhotonNetwork.CreateRoom( null );
-                return;
-            }
-
-            foreach( var room in roomList )
-            {
-                if( !room.open )
-                {
-                    continue;
-                }
-                PhotonNetwork.JoinRoom( room.name );
-                return;
-            }
         }
 
         public void OnPhotonRandomJoinFailed()
         {
             Debug.Log( "OnPhotonRandomJoinFailed" );
-            PhotonNetwork.CreateRoom( null );
+            //PhotonNetwork.CreateRoom( null );
         }
 
         public override void OnJoinedRoom()
@@ -274,20 +259,19 @@ namespace HimonoLib
                 return;
             }
 
-
             m_networkUI.Connect = Connected;
             m_networkUI.Lobby   = PhotonNetwork.inRoom ? PhotonNetwork.room.playerCount.ToString() : "";
             m_networkUI.Room    = RoomName;
         }
 
-        private IEnumerator JoinLobbyCoroutine( OnJoinLobby i_callback )
+        private IEnumerator JoinLobbyCoroutine( string i_lobbyName, OnJoinLobby i_callback )
         {
             if( !Connected )
             {
                 yield return null;
             }
 
-            bool ret = PhotonNetwork.JoinLobby();
+            bool ret = PhotonNetwork.JoinLobby( new TypedLobby( i_lobbyName, LobbyType.Default ) );
 
             while( !InsideLobby )
             {
@@ -323,15 +307,29 @@ namespace HimonoLib
 
         private IEnumerator EnterRoomCoroutine( string i_roomName, OnEnterRoomCallback i_callback )
         {
+            while( string.IsNullOrEmpty( i_roomName ) )
+            {
+                RoomInfo[ ] roomList = null;
+                while( roomList == null || roomList.Length == 0 )
+                {
+                    yield return null;
+                    roomList = PhotonNetwork.GetRoomList();
+                }
+
+                var room    = roomList.FirstOrDefault( value => value.open );
+                if( room == null )
+                {
+                    continue;
+                }
+
+                i_roomName = roomList[ 0 ].name;
+            }
+
+
+
+
             bool ret = false;
-            if( string.IsNullOrEmpty( i_roomName ) )
-            {
-                ret = PhotonNetwork.JoinRandomRoom();
-            }
-            else
-            {
-                ret = PhotonNetwork.JoinRoom( i_roomName );
-            }
+            ret = PhotonNetwork.JoinRoom( i_roomName );
 
             if( !ret )
             {
